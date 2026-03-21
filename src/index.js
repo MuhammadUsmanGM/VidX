@@ -41,6 +41,8 @@ export async function run() {
     printBanner();
     console.log(chalk.bold('  Usage:'));
     console.log(`    ${chalk.cyan('vidx')} [options]             ${chalk.dim('Run interactive TUI')}`);
+    console.log(`    ${chalk.cyan('vidx list')}                   ${chalk.dim('List all videos and sizes')}`);
+    console.log(`    ${chalk.cyan('vidx doctor')}                 ${chalk.dim('Check system health/FFmpeg')}`);
     console.log(`    ${chalk.cyan('vidx init')}                   ${chalk.dim('Generate .vidxrc config')}`);
     console.log('');
     console.log(chalk.bold('  Options:'));
@@ -62,6 +64,53 @@ export async function run() {
   }
 
   printBanner();
+
+  // ── Handle Commands ────────────────────────────────────────────────────────
+  if (args[0] === 'list') {
+    const spinner = ora('Scanning videos...').start();
+    const videos = await detectVideos(process.cwd());
+    spinner.stop();
+    if (videos.length === 0) {
+      console.log(chalk.yellow('  No video files found.'));
+    } else {
+      console.log(chalk.bold(`  📁 Found ${videos.length} videos:\n`));
+      let total = 0;
+      for (const v of videos) {
+        console.log(`    ${chalk.dim('•')} ${v.relativePath.padEnd(46)} ${chalk.cyan(v.sizeFormatted)}`);
+        total += v.size;
+      }
+      console.log(chalk.dim('  ─'.repeat(60)));
+      console.log(`  ${chalk.bold('Total Project Video Size:')} ${chalk.green(formatBytes(total))}\n`);
+    }
+    return;
+  }
+
+  if (args[0] === 'doctor') {
+    console.log(chalk.bold('  🩺 VidX System Check:\n'));
+    
+    // Check Node
+    console.log(`    ${chalk.green('✔')} Node.js version    : ${process.version}`);
+
+    // Check FFmpeg
+    try {
+      const ffmpeg = detectFfmpeg();
+      const status = ffmpeg.isSystem ? chalk.green('System install') : chalk.yellow('Bundled static');
+      console.log(`    ${chalk.green('✔')} FFmpeg status      : ${status} (v${ffmpeg.version})`);
+    } catch (err) {
+      console.log(`    ${chalk.red('✘')} FFmpeg status      : ${chalk.red('NOT FOUND')} - ${err.message}`);
+    }
+
+    // Check Permissions
+    try {
+      fs.accessSync(process.cwd(), fs.constants.W_OK);
+      console.log(`    ${chalk.green('✔')} Write permission  : ${chalk.green('Granted')} (current directory)`);
+    } catch {
+      console.log(`    ${chalk.red('✘')} Write permission  : ${chalk.red('DENIED')} (current directory)`);
+    }
+
+    console.log('');
+    return;
+  }
 
   // Handle `vidx init`
   if (args[0] === 'init') {
@@ -416,4 +465,12 @@ async function runInit() {
 function getArg(args, flag) {
   const i = args.indexOf(flag);
   return i !== -1 && args[i + 1] ? args[i + 1] : null;
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
