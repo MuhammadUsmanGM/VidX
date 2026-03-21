@@ -36,9 +36,9 @@ export function buildCommand({ ffmpegPath, inputPath, outputPath, format, preset
     args.push('-preset', cfg.preset || 'slow');
     args.push('-pix_fmt', 'yuv420p');         // required for browser compat + efficient chroma subsampling
     if (resolution.scale) args.push('-vf', resolution.scale);
-    args.push('-movflags', '+faststart');      // stream before full download
     args.push('-c:a', 'aac');
     args.push('-b:a', cfg.audioBitrate || '96k');
+    args.push('-movflags', '+faststart');      // stream before full download
 
   } else if (format === 'webm') {
     const cfg = presetKey === 'custom' ? custom.webm : preset.webm;
