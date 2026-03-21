@@ -4,39 +4,50 @@ import { PRESETS, RESOLUTIONS } from './presets.js';
 /**
  * Build FFmpeg command arguments for a single input → output conversion.
  *
- * @param {object} opts
- * @param {string} opts.ffmpegPath - path to ffmpeg binary
- * @param {string} opts.inputPath  - absolute path to input file
- * @param {string} opts.outputPath - absolute path to output file
- * @param {'mp4'|'webm'} opts.format
- * @param {string} opts.presetKey  - key in PRESETS
- * @param {string} opts.resolutionKey - key in RESOLUTIONS
- * @param {object} [opts.custom]   - custom CRF/bitrate if presetKey === 'custom'
- * @returns {{ cmd: string, args: string[] }}
+ * MP4 (H.264):
+ *   - libx264, CRF-based quality, slow preset for better compression
+ *   - pix_fmt yuv420p → required for browser playback + better compression efficiency
+ *   - movflags +faststart → enables streaming before full download
+ *   - map_metadata -1 → strips bloated embedded metadata
+ *
+ * WebM (VP9):
+ *   - libvpx-vp9 in Constrained Quality mode (-b:v 0 -crf N)
+ *   - IMPORTANT: -b:v 0 MUST come before -crf for VP9 constrained quality mode
+ *   - deadline good + cpu-used 2 → critical for real compression (default is lossless-quality)
+ *   - row-mt 1 → enables row-based multithreading for speed
+ *   - map_metadata -1 → strips metadata
  */
 export function buildCommand({ ffmpegPath, inputPath, outputPath, format, presetKey, resolutionKey, custom }) {
   const resolution = RESOLUTIONS[resolutionKey];
   const preset = PRESETS[presetKey];
 
-  const args = ['-i', inputPath, '-y'];
+  // Base args
+  const args = ['-i', inputPath, '-y', '-map_metadata', '-1'];
 
   if (format === 'mp4') {
     const cfg = presetKey === 'custom' ? custom.mp4 : preset.mp4;
+
     args.push('-c:v', 'libx264');
     args.push('-crf', String(cfg.crf));
     args.push('-preset', cfg.preset || 'slow');
+    args.push('-pix_fmt', 'yuv420p');         // required for browser compat + efficient chroma subsampling
     if (resolution.scale) args.push('-vf', resolution.scale);
-    args.push('-movflags', '+faststart');
+    args.push('-movflags', '+faststart');      // stream before full download
     args.push('-c:a', 'aac');
-    args.push('-b:a', cfg.audioBitrate || '128k');
+    args.push('-b:a', cfg.audioBitrate || '96k');
+
   } else if (format === 'webm') {
     const cfg = presetKey === 'custom' ? custom.webm : preset.webm;
+
     args.push('-c:v', 'libvpx-vp9');
-    args.push('-crf', String(cfg.crf));
-    args.push('-b:v', '0');
+    args.push('-b:v', '0');                   // MUST be before -crf for constrained quality mode
+    args.push('-crf', String(cfg.crf));       // constrained quality target
+    args.push('-deadline', 'good');           // enables real compression (vs 'realtime' which is near-lossless)
+    args.push('-cpu-used', '2');              // 0=best quality/slowest, 5=fastest/worst — 2 is good balance
+    args.push('-row-mt', '1');               // row-based multithreading for faster encoding
     if (resolution.scale) args.push('-vf', resolution.scale);
     args.push('-c:a', 'libopus');
-    args.push('-b:a', cfg.audioBitrate || '96k');
+    args.push('-b:a', cfg.audioBitrate || '80k');
   }
 
   args.push(outputPath);

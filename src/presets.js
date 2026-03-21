@@ -1,24 +1,27 @@
 /**
  * Quality presets — CRF values, codec settings, best-use descriptions.
+ *
+ * CRF for libx264: 0–51 (lower = better quality, bigger file). Web sweet spot: 24–28
+ * CRF for libvpx-vp9: 0–63 (lower = better quality, bigger file). Web sweet spot: 33–40
  */
 export const PRESETS = {
   webOptimized: {
     label: 'Web Optimized',
     description: 'Best balance of size and quality (recommended)',
-    mp4: { crf: 23, preset: 'slow', audioBitrate: '128k' },
-    webm: { crf: 33, audioBitrate: '96k' },
+    mp4: { crf: 26, preset: 'slow', audioBitrate: '96k' },
+    webm: { crf: 35, audioBitrate: '80k' },
   },
   highQuality: {
     label: 'High Quality',
     description: 'Larger file, sharper image — hero videos, showcase pages',
-    mp4: { crf: 18, preset: 'slow', audioBitrate: '192k' },
-    webm: { crf: 24, audioBitrate: '128k' },
+    mp4: { crf: 20, preset: 'slow', audioBitrate: '128k' },
+    webm: { crf: 28, audioBitrate: '96k' },
   },
   smallFile: {
     label: 'Small File',
     description: 'Maximum compression — background loops, mobile-first',
-    mp4: { crf: 28, preset: 'slow', audioBitrate: '96k' },
-    webm: { crf: 40, audioBitrate: '64k' },
+    mp4: { crf: 32, preset: 'slow', audioBitrate: '64k' },
+    webm: { crf: 42, audioBitrate: '48k' },
   },
   custom: {
     label: 'Custom',
