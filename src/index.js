@@ -264,12 +264,34 @@ export async function run() {
 
 // ─── FFmpeg runner ─────────────────────────────────────────────────────────────
 
+let activeProcess = null;
+
 function runFfmpeg(job, bar) {
   return new Promise((resolve, reject) => {
     const proc = spawn(job.ffmpegPath, job.args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    activeProcess = proc;
 
     let duration = null;
     let stderrBuf = '';
+
+    const cleanup = () => {
+      if (activeProcess) {
+        activeProcess.kill('SIGKILL');
+        activeProcess = null;
+      }
+      // Delete partial file on failure/interrupt
+      if (fs.existsSync(job.outputPath)) {
+        try { fs.unlinkSync(job.outputPath); } catch {}
+      }
+    };
+
+    const onInterrupt = () => {
+      cleanup();
+      console.log(chalk.yellow('\n\n  ⚠ Interrupted. Partial files cleaned up.'));
+      process.exit(0);
+    };
+
+    process.once('SIGINT', onInterrupt);
 
     proc.stderr.on('data', (chunk) => {
       const text = chunk.toString();
@@ -301,14 +323,21 @@ function runFfmpeg(job, bar) {
     });
 
     proc.on('close', (code) => {
+      process.removeListener('SIGINT', onInterrupt);
+      activeProcess = null;
       if (code === 0) resolve();
       else {
+        cleanup();
         const errLine = stderrBuf.split('\n').filter(Boolean).slice(-3).join(' | ');
         reject(new Error(`FFmpeg exited with code ${code}: ${errLine}`));
       }
     });
 
-    proc.on('error', reject);
+    proc.on('error', (err) => {
+      process.removeListener('SIGINT', onInterrupt);
+      cleanup();
+      reject(err);
+    });
   });
 }
 
