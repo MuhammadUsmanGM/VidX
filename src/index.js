@@ -31,12 +31,37 @@ function printBanner() {
 // ─── Main Entry ───────────────────────────────────────────────────────────────
 
 export async function run() {
-  printBanner();
-
-  // Parse CLI args for non-interactive mode
+  // Parse CLI args
   const args = process.argv.slice(2);
   const isNonInteractive = args.includes('--yes') || args.includes('-y');
   const isDryRun = args.includes('--dry-run');
+
+  // ── Version & Help ──────────────────────────────────────────────────────────
+  if (args.includes('--help') || args.includes('-h')) {
+    printBanner();
+    console.log(chalk.bold('  Usage:'));
+    console.log(`    ${chalk.cyan('vidx')} [options]             ${chalk.dim('Run interactive TUI')}`);
+    console.log(`    ${chalk.cyan('vidx init')}                   ${chalk.dim('Generate .vidxrc config')}`);
+    console.log('');
+    console.log(chalk.bold('  Options:'));
+    console.log(`    --preset <name>         webOptimized | highQuality | smallFile`);
+    console.log(`    --format <type>         mp4 | webm | both`);
+    console.log(`    --resolution <res>      1080p | 720p | 480p | original`);
+    console.log(`    --output <dir>          Output directory path`);
+    console.log(`    --yes, -y               Skip confirmation prompts`);
+    console.log(`    --dry-run               Show commands without executing`);
+    console.log(`    --version, -v           Show version`);
+    console.log(`    --help, -h              Show this help menu`);
+    console.log('');
+    return;
+  }
+
+  if (args.includes('--version') || args.includes('-v')) {
+    console.log('1.0.0');
+    return;
+  }
+
+  printBanner();
 
   // Handle `vidx init`
   if (args[0] === 'init') {
@@ -344,7 +369,19 @@ function runFfmpeg(job, bar) {
 // ─── vidx init ─────────────────────────────────────────────────────────────────
 
 async function runInit() {
-  console.log(chalk.bold.hex('#a78bfa')('  Generating .vidxrc config file...\n'));
+  const configPath = path.join(process.cwd(), '.vidxrc');
+  if (fs.existsSync(configPath)) {
+    const overwrite = await confirm({
+      message: '  ⚠ .vidxrc already exists. Overwrite?',
+      default: false,
+    });
+    if (!overwrite) {
+      console.log(chalk.dim('\n  Cancelled.\n'));
+      return;
+    }
+  }
+
+  console.log(chalk.bold.hex('#fb923c')('\n  Generating .vidxrc config file...\n'));
 
   const preset = await select({
     message: 'Default preset?',
