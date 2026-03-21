@@ -18,6 +18,10 @@ import { PRESETS, RESOLUTIONS } from './presets.js';
  *   - map_metadata -1 → strips metadata
  */
 export function buildCommand({ ffmpegPath, inputPath, outputPath, format, presetKey, resolutionKey, custom }) {
+  if (presetKey === 'custom' && !custom) {
+    throw new Error('Custom preset selected but no custom config provided.');
+  }
+
   const resolution = RESOLUTIONS[resolutionKey];
   const preset = PRESETS[presetKey];
 
