@@ -1,0 +1,99 @@
+import fs from 'fs';
+import chalk from 'chalk';
+
+/**
+ * Print the final summary after all jobs complete.
+ *
+ * @param {Array} results - array of { job, outputPath, success, durationMs, error }
+ */
+export function printSummary(results) {
+  const totalMs = results.reduce((acc, r) => acc + (r.durationMs || 0), 0);
+  const totalSec = (totalMs / 1000).toFixed(1);
+
+  const successCount = results.filter((r) => r.success).length;
+
+  console.log('');
+  console.log(chalk.green.bold(`🎉 Done! ${successCount} of ${results.length} outputs processed in ${totalSec}s`));
+  console.log('');
+
+  // Group by input file
+  const byInput = new Map();
+  for (const r of results) {
+    const key = r.job.inputFile.name;
+    if (!byInput.has(key)) byInput.set(key, []);
+    byInput.get(key).push(r);
+  }
+
+  for (const [inputName, fileResults] of byInput) {
+    console.log(chalk.cyan.bold(`  ${inputName}`));
+    for (const r of fileResults) {
+      if (!r.success) {
+        console.log(chalk.red(`    → ${r.job.outputPath}  ${chalk.dim('FAILED:')} ${r.error}`));
+        continue;
+      }
+
+      const inputSize = r.job.inputFile.size;
+      const outputSize = getFileSize(r.job.outputPath);
+      const saved = inputSize - outputSize;
+      const savedPct = inputSize > 0 ? Math.round((saved / inputSize) * 100) : 0;
+
+      const outputName = r.job.outputPath.split(/[\\/]/).pop();
+      const inFmt = formatBytes(inputSize);
+      const outFmt = formatBytes(outputSize);
+
+      console.log(
+        `    ${chalk.dim('→')} ${chalk.white(outputName.padEnd(36))}` +
+        `${chalk.dim(inFmt.padStart(10))}  ${chalk.dim('→')}  ` +
+        `${chalk.green(outFmt.padStart(10))}  ` +
+        chalk.yellow(`(${savedPct}% smaller) ✔`)
+      );
+    }
+    console.log('');
+  }
+
+  // FFmpeg commands footer
+  const successful = results.filter((r) => r.success);
+  if (successful.length > 0) {
+    console.log(chalk.dim('─'.repeat(60)));
+    console.log(chalk.dim('  FFmpeg commands used:'));
+    console.log('');
+    for (const r of successful) {
+      console.log(chalk.dim(`  ${wordWrapCmd(r.job.cmd, 80)}`));
+      console.log('');
+    }
+    console.log(chalk.dim('─'.repeat(60)));
+  }
+}
+
+function getFileSize(filePath) {
+  try {
+    return fs.statSync(filePath).size;
+  } catch {
+    return 0;
+  }
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
+function wordWrapCmd(cmd, maxLen) {
+  if (cmd.length <= maxLen) return cmd;
+  const parts = cmd.split(' ');
+  const lines = [];
+  let current = '';
+  for (const part of parts) {
+    if ((current + ' ' + part).length > maxLen && current.length > 0) {
+      lines.push(current + ' \\');
+      current = '    ' + part;
+    } else {
+      current = current ? current + ' ' + part : part;
+    }
+  }
+  if (current) lines.push(current);
+  return lines.join('\n  ');
+}

@@ -1,0 +1,9 @@
+node_modules/
+optimized/
+.vidxrc
+*.mp4
+*.webm
+*.mov
+*.avi
+*.mkv
+VidX.md
