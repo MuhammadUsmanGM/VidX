@@ -120,6 +120,9 @@ export async function run() {
   if (args[0] === 'doctor') {
     console.log(chalk.bold('  🩺 VidX System Check:\n'));
     
+    // Check VidX
+    console.log(`    ${chalk.green('✔')} VidX version       : v${VERSION}`);
+
     // Check Node
     console.log(`    ${chalk.green('✔')} Node.js version    : ${process.version}`);
 
