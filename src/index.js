@@ -354,7 +354,7 @@ export async function run() {
 
     const bar = new SingleBar(
       {
-        format: `  ${theme.brandDim('{bar}')} {percentage}%  —  {status}`,
+        format: `  ${theme.brandDim('{bar}')} {percentage}%  —  {status}  ${chalk.dim('·  eta {eta_formatted}')}`,
         barCompleteChar: '█',
         barIncompleteChar: '░',
         hideCursor: true,
