@@ -12,6 +12,12 @@ import { PRESETS, RESOLUTIONS, FORMATS } from './presets.js';
 import { buildJobs } from './build-cmd.js';
 import { printSummary } from './summary.js';
 import { loadConfig } from './config.js';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const pkg = require('../package.json');
+const VERSION = pkg.version;
+
 
 // ─── Banner ───────────────────────────────────────────────────────────────────
 
@@ -59,7 +65,7 @@ export async function run() {
   }
 
   if (args.includes('--version') || args.includes('-v')) {
-    console.log('1.0.0');
+    console.log(VERSION);
     return;
   }
 
