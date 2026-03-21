@@ -90,10 +90,17 @@ export async function run() {
 
   printBanner();
 
+  // Load config early for ignore/defaults
+  const config = loadConfig();
+
+  // Calculate dynamic ignore path
+  const customOutputDir = getArg(args, '--output') || config?.outputDir || 'optimized';
+  const ignorePatterns = [`**/${customOutputDir}/**`];
+
   // ── Handle Commands ────────────────────────────────────────────────────────
   if (args[0] === 'list') {
     const spinner = ora('Scanning videos...').start();
-    const videos = await detectVideos(process.cwd());
+    const videos = await detectVideos(process.cwd(), ignorePatterns);
     spinner.stop();
     if (videos.length === 0) {
       console.log(chalk.yellow('  No video files found.'));
@@ -158,8 +165,6 @@ export async function run() {
     process.exit(1);
   }
 
-  // ── Load .vidxrc config if present ─────────────────────────────────────────
-  const config = loadConfig();
   if (config) {
     console.log(chalk.dim(`  Config loaded from .vidxrc`));
   }
@@ -168,7 +173,7 @@ export async function run() {
   const scanSpinner = ora('Scanning project for video files...').start();
   let videos;
   try {
-    videos = await detectVideos(process.cwd());
+    videos = await detectVideos(process.cwd(), ignorePatterns);
     scanSpinner.stop();
   } catch (err) {
     scanSpinner.fail('Failed to scan for videos: ' + err.message);

@@ -28,11 +28,12 @@ const IGNORE_DIRS = [
  * Scan cwd for all video files.
  * Returns array of { name, fullPath, relativePath, size, sizeFormatted }
  */
-export async function detectVideos(cwd = process.cwd()) {
+export async function detectVideos(cwd = process.cwd(), customIgnore = []) {
+  const ignore = [...IGNORE_DIRS, ...customIgnore];
   const matches = await fg(VIDEO_EXTENSIONS, {
     cwd,
     absolute: true,
-    ignore: IGNORE_DIRS,
+    ignore,
     caseSensitiveMatch: false,
   });
 
