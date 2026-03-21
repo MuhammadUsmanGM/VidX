@@ -1,5 +1,13 @@
 # VidX 🎬
 
+<p align="left">
+  <img src="https://img.shields.io/npm/v/vidx?color=f97316&style=flat-square" alt="npm version">
+  <img src="https://img.shields.io/github/license/MuhammadUsmanGM/VidX?color=ea580c&style=flat-square" alt="license">
+  <img src="https://img.shields.io/bundlephobia/min/vidx?color=fb923c&style=flat-square" alt="install size">
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-f97316?style=flat-square" alt="platforms">
+  <img src="https://img.shields.io/github/stars/MuhammadUsmanGM/VidX?style=flat-square&color=ea580c" alt="stars">
+</p>
+
 > **Video transformation for the web — without the FFmpeg pain.**
 
 VidX is an interactive CLI tool that takes the pain out of optimizing videos for the web. Instead of memorizing cryptic FFmpeg flags, VidX walks you through a beautiful terminal UI — detect, select, configure, compress. Done.
