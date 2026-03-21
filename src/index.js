@@ -17,11 +17,14 @@ import { loadConfig } from './config.js';
 
 function printBanner() {
   console.log('');
-  const logo =
-    chalk.bold.hex('#a78bfa')('  Vid') +
-    chalk.bold.hex('#7c3aed')('X') +
-    chalk.dim('  —  Video transformation for the web, without the FFmpeg pain.');
-  console.log(logo);
+  console.log(chalk.bold.hex('#a78bfa')('  ██╗   ██╗██╗██████╗ ██╗  ██╗'));
+  console.log(chalk.bold.hex('#7c3aed')('  ██║   ██║██║██╔══██╗╚██╗██╔╝'));
+  console.log(chalk.bold.hex('#a78bfa')('  ██║   ██║██║██║  ██║ ╚███╔╝ '));
+  console.log(chalk.bold.hex('#7c3aed')('  ╚██╗ ██╔╝██║██║  ██║ ██╔██╗ '));
+  console.log(chalk.bold.hex('#a78bfa')('   ╚████╔╝ ██║██████╔╝██╔╝ ██╗'));
+  console.log(chalk.bold.hex('#7c3aed')('    ╚═══╝  ╚═╝╚═════╝ ╚═╝  ╚═╝'));
+  console.log('');
+  console.log(chalk.dim('  Video transformation for the web — without the FFmpeg pain.'));
   console.log('');
 }
 
