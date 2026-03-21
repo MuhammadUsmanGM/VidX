@@ -381,7 +381,7 @@ export async function run() {
   }
 
   // ── Step 10: Summary ───────────────────────────────────────────────────────
-  printSummary(results);
+  printSummary(results, !isNonInteractive);
 }
 
 // ─── FFmpeg runner ─────────────────────────────────────────────────────────────

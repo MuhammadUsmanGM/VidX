@@ -4,9 +4,9 @@ import chalk from 'chalk';
 /**
  * Print the final summary after all jobs complete.
  *
- * @param {Array} results - array of { job, outputPath, success, durationMs, error }
+ * @param {boolean} isInteractive
  */
-export function printSummary(results) {
+export function printSummary(results, isInteractive = false) {
   const totalMs = results.reduce((acc, r) => acc + (r.durationMs || 0), 0);
   const totalSec = (totalMs / 1000).toFixed(1);
 
@@ -62,6 +62,14 @@ export function printSummary(results) {
       console.log('');
     }
     console.log(chalk.dim('─'.repeat(60)));
+  }
+
+  // CTA Footer for humans
+  if (isInteractive) {
+    console.log('');
+    console.log(chalk.dim('  ⭐ Like VidX? Star the repo  →  github.com/MuhammadUsmanGM/VidX'));
+    console.log(chalk.dim('  🐛 Bug or idea? Open an issue →  github.com/MuhammadUsmanGM/VidX/issues'));
+    console.log('');
   }
 }
 
