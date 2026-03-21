@@ -12,6 +12,7 @@ import { PRESETS, RESOLUTIONS, FORMATS } from './presets.js';
 import { buildJobs } from './build-cmd.js';
 import { printSummary } from './summary.js';
 import { loadConfig } from './config.js';
+import * as theme from './theme.js';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
@@ -41,12 +42,12 @@ process.on('SIGINT', () => {
 
 function printBanner() {
   console.log('');
-  console.log(chalk.bold.hex('#fb923c')('  ██╗   ██╗██╗██████╗ ██╗  ██╗'));
-  console.log(chalk.bold.hex('#ea580c')('  ██║   ██║██║██╔══██╗╚██╗██╔╝'));
-  console.log(chalk.bold.hex('#fb923c')('  ██║   ██║██║██║  ██║ ╚███╔╝ '));
-  console.log(chalk.bold.hex('#ea580c')('  ╚██╗ ██╔╝██║██║  ██║ ██╔██╗ '));
-  console.log(chalk.bold.hex('#fb923c')('   ╚████╔╝ ██║██████╔╝██╔╝ ██╗'));
-  console.log(chalk.bold.hex('#ea580c')('    ╚═══╝  ╚═╝╚═════╝ ╚═╝  ╚═╝'));
+  console.log(theme.brand('  ██╗   ██╗██╗██████╗ ██╗  ██╗'));
+  console.log(theme.brandDeep('  ██║   ██║██║██╔══██╗╚██╗██╔╝'));
+  console.log(theme.brand('  ██║   ██║██║██║  ██║ ╚███╔╝ '));
+  console.log(theme.brandDeep('  ╚██╗ ██╔╝██║██║  ██║ ██╔██╗ '));
+  console.log(theme.brand('   ╚████╔╝ ██║██████╔╝██╔╝ ██╗'));
+  console.log(theme.brandDeep('    ╚═══╝  ╚═╝╚═════╝ ╚═╝  ╚═╝'));
   console.log('');
   console.log(chalk.dim('  Video transformation for the web — without the FFmpeg pain.'));
   console.log('');
@@ -330,7 +331,7 @@ export async function run() {
 
     const bar = new SingleBar(
       {
-        format: `  ${chalk.hex('#7c3aed')('{bar}')} {percentage}%  —  {status}`,
+        format: `  ${theme.brandDim('{bar}')} {percentage}%  —  {status}`,
         barCompleteChar: '█',
         barIncompleteChar: '░',
         hideCursor: true,
@@ -437,7 +438,7 @@ async function runInit() {
     }
   }
 
-  console.log(chalk.bold.hex('#fb923c')('\n  Generating .vidxrc config file...\n'));
+  console.log(theme.brand('\n  Generating .vidxrc config file...\n'));
 
   const preset = await select({
     message: 'Default preset?',
