@@ -1,5 +1,23 @@
 import path from 'path';
+import fs from 'fs';
 import { PRESETS, RESOLUTIONS } from './presets.js';
+
+/**
+ * Returns a unique path by appending _1, _2 etc if it already exists.
+ */
+function getUniquePath(dest) {
+  if (!fs.existsSync(dest)) return dest;
+
+  const ext = path.extname(dest);
+  const base = dest.slice(0, -ext.length);
+  let counter = 1;
+
+  while (fs.existsSync(`${base}_${counter}${ext}`)) {
+    counter++;
+  }
+
+  return `${base}_${counter}${ext}`;
+}
 
 /**
  * Build FFmpeg command arguments for a single input → output conversion.
@@ -78,7 +96,9 @@ export function buildJobs({ files, format, outputDir, presetKey, resolutionKey, 
   for (const file of files) {
     const baseName = path.basename(file.name, path.extname(file.name));
     for (const fmt of formats) {
-      const outputPath = path.join(outputDir, `${baseName}.${fmt}`);
+      const initialPath = path.join(outputDir, `${baseName}.${fmt}`);
+      const outputPath = getUniquePath(initialPath);
+
       const { cmd, args } = buildCommand({
         ffmpegPath,
         inputPath: file.fullPath,
