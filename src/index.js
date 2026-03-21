@@ -216,6 +216,11 @@ export async function run() {
   // ── Step 4: Output format ──────────────────────────────────────────────────
   let format = getArg(args, '--format') || config?.formats?.join('+') || null;
 
+  if (format && !['mp4', 'webm', 'both'].includes(format)) {
+    console.log(chalk.red(`\n  ✖ Invalid format: "${format}". Expected mp4, webm, or both.\n`));
+    process.exit(1);
+  }
+
   if (!format) {
     format = await select({
       message: '🎯 Output format?',
@@ -235,6 +240,11 @@ export async function run() {
   // ── Step 5: Quality preset ─────────────────────────────────────────────────
   let presetKey = getArg(args, '--preset') || config?.preset || null;
   let customCfg = null;
+
+  if (presetKey && !PRESETS[presetKey]) {
+    console.log(chalk.red(`\n  ✖ Invalid preset: "${presetKey}". Check --help for options.\n`));
+    process.exit(1);
+  }
 
   if (!presetKey) {
     presetKey = await select({
@@ -259,6 +269,11 @@ export async function run() {
 
   // ── Step 6: Resolution ─────────────────────────────────────────────────────
   let resolutionKey = getArg(args, '--resolution') || config?.resolution || null;
+
+  if (resolutionKey && !RESOLUTIONS[resolutionKey]) {
+    console.log(chalk.red(`\n  ✖ Invalid resolution: "${resolutionKey}". Check --help for options.\n`));
+    process.exit(1);
+  }
 
   if (!resolutionKey) {
     resolutionKey = await select({
