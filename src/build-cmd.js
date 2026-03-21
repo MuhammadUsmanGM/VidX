@@ -75,6 +75,16 @@ export function buildCommand({ ffmpegPath, inputPath, outputPath, format, preset
     args.push('-b:a', cfg.audioBitrate || '80k');
   }
 
+  // GIF Safety: If source is GIF, disable audio to avoid FFmpeg warnings/waste
+  if (inputPath.toLowerCase().endsWith('.gif')) {
+    // Remove the audio mapping we just added
+    const audioIdx = args.indexOf('-c:a');
+    if (audioIdx !== -1) {
+      args.splice(audioIdx, 4); // remove -c:a x -b:a y
+      args.push('-an');         // disable audio
+    }
+  }
+
   args.push(outputPath);
 
   // Human-readable command string for display
