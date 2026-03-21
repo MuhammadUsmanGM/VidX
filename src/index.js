@@ -88,6 +88,17 @@ export async function run() {
     return;
   }
 
+  // ── Handle Commands & Typos ────────────────────────────────────────────────
+  const firstArg = args[0];
+  const isCommand = firstArg && !firstArg.startsWith('-');
+  const validCommands = ['list', 'doctor', 'init'];
+
+  if (isCommand && !validCommands.includes(firstArg)) {
+    console.log(chalk.red(`\n  ✖ Unknown command: "${firstArg}"`));
+    console.log(chalk.dim('    Check --help for a list of valid commands.\n'));
+    return;
+  }
+
   printBanner();
 
   // Load config early for ignore/defaults
@@ -146,6 +157,7 @@ export async function run() {
     console.log('');
     return;
   }
+
 
   // Handle `vidx init`
   if (args[0] === 'init') {
