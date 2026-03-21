@@ -200,7 +200,7 @@ export async function run() {
       choices: videos.map((v) => ({
         name: `${v.relativePath.padEnd(42)} ${chalk.dim(v.sizeFormatted)}`,
         value: v,
-        checked: true,
+        checked: false,
       })),
       pageSize: 12,
       instructions: chalk.dim('  Space to toggle · A to select all · Enter to continue'),
