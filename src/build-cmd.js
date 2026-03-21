@@ -34,7 +34,9 @@ export function buildCommand({ ffmpegPath, inputPath, outputPath, format, preset
     args.push('-c:v', 'libx264');
     args.push('-crf', String(cfg.crf));
     args.push('-preset', cfg.preset || 'slow');
-    args.push('-pix_fmt', 'yuv420p');         // required for browser compat + efficient chroma subsampling
+    args.push('-pix_fmt', 'yuv420p');
+    args.push('-maxrate', cfg.maxrate || '2M');     // caps bitrate ceiling
+    args.push('-bufsize', cfg.bufsize || '4M');     // must pair with maxrate
     if (resolution.scale) args.push('-vf', resolution.scale);
     args.push('-c:a', 'aac');
     args.push('-b:a', cfg.audioBitrate || '96k');
@@ -46,9 +48,10 @@ export function buildCommand({ ffmpegPath, inputPath, outputPath, format, preset
     args.push('-c:v', 'libvpx-vp9');
     args.push('-b:v', '0');                   // MUST be before -crf for constrained quality mode
     args.push('-crf', String(cfg.crf));       // constrained quality target
-    args.push('-deadline', 'good');           // enables real compression (vs 'realtime' which is near-lossless)
-    args.push('-cpu-used', '2');              // 0=best quality/slowest, 5=fastest/worst — 2 is good balance
-    args.push('-row-mt', '1');               // row-based multithreading for faster encoding
+    args.push('-deadline', 'good');           // enables real compression (vs 'realtime')
+    args.push('-cpu-used', '2');              // 0=best quality/slowest, 5=fastest/worst
+    args.push('-row-mt', '1');               // row-based multithreading
+    args.push('-threads', '4');              // prevent single-thread slowness
     if (resolution.scale) args.push('-vf', resolution.scale);
     args.push('-c:a', 'libopus');
     args.push('-b:a', cfg.audioBitrate || '80k');

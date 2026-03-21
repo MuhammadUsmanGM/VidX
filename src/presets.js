@@ -8,20 +8,20 @@ export const PRESETS = {
   webOptimized: {
     label: 'Web Optimized',
     description: 'Best balance of size and quality (recommended)',
-    mp4: { crf: 26, preset: 'slow', audioBitrate: '96k' },
-    webm: { crf: 35, audioBitrate: '80k' },
+    mp4: { crf: 32, preset: 'slow', audioBitrate: '96k', maxrate: '1500k', bufsize: '3000k' },
+    webm: { crf: 42, audioBitrate: '80k' },
   },
   highQuality: {
     label: 'High Quality',
     description: 'Larger file, sharper image — hero videos, showcase pages',
-    mp4: { crf: 20, preset: 'slow', audioBitrate: '128k' },
-    webm: { crf: 28, audioBitrate: '96k' },
+    mp4: { crf: 24, preset: 'slow', audioBitrate: '128k', maxrate: '3000k', bufsize: '6000k' },
+    webm: { crf: 32, audioBitrate: '96k' },
   },
   smallFile: {
     label: 'Small File',
     description: 'Maximum compression — background loops, mobile-first',
-    mp4: { crf: 32, preset: 'slow', audioBitrate: '64k' },
-    webm: { crf: 42, audioBitrate: '48k' },
+    mp4: { crf: 38, preset: 'slow', audioBitrate: '64k', maxrate: '800k', bufsize: '1600k' },
+    webm: { crf: 50, audioBitrate: '48k' },
   },
   custom: {
     label: 'Custom',
