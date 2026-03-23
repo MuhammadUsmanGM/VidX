@@ -8,7 +8,9 @@
   },
   "scripts": {
     "start": "node bin/vidx.js",
-    "dev": "node bin/vidx.js"
+    "dev": "node bin/vidx.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "ffmpeg",
@@ -45,5 +47,8 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "vitest": "^4.1.0"
+  }
 }
