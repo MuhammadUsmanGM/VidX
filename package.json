@@ -1,5 +1,5 @@
 {
-  "name": "vidx",
+  "name": "@mugm/vidx",
   "version": "1.0.0",
   "description": "Video transformation for the web — without the FFmpeg pain.",
   "main": "src/index.js",
