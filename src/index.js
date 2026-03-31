@@ -226,7 +226,13 @@ export async function run() {
   }
 
   // ── Step 4: Output format ──────────────────────────────────────────────────
-  let format = getArg(args, '--format') || config?.formats?.join('+') || null;
+  let format = getArg(args, '--format') || null;
+
+  // Normalize config format array (["mp4","webm"] → "both")
+  if (!format && config?.formats) {
+    const fmts = config.formats;
+    format = Array.isArray(fmts) ? (fmts.length === 2 ? 'both' : fmts[0]) : fmts;
+  }
 
   if (format && !['mp4', 'webm', 'both'].includes(format)) {
     console.log(chalk.red(`\n  ✖ Invalid format: "${format}". Expected mp4, webm, or both.\n`));
@@ -242,11 +248,6 @@ export async function run() {
         { name: FORMATS.both.label, value: 'both' },
       ],
     });
-  }
-
-  // Normalize config format array (["mp4","webm"] → "both")
-  if (Array.isArray(format)) {
-    format = format.length === 2 ? 'both' : format[0];
   }
 
   // ── Step 5: Quality preset ─────────────────────────────────────────────────
