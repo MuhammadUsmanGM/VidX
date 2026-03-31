@@ -12,6 +12,7 @@ import { PRESETS, RESOLUTIONS, FORMATS } from './presets.js';
 import { buildJobs } from './build-cmd.js';
 import { printSummary } from './summary.js';
 import { loadConfig } from './config.js';
+import { formatBytes } from './utils.js';
 import * as theme from './theme.js';
 import { createRequire } from 'module';
 
@@ -66,6 +67,7 @@ export async function run() {
     printBanner();
     console.log(chalk.bold('  Usage:'));
     console.log(`    ${chalk.cyan('vidx')} [options]             ${chalk.dim('Run interactive TUI')}`);
+    console.log(`    ${chalk.cyan('vidx <file>')}                 ${chalk.dim('Compress a specific file')}`);
     console.log(`    ${chalk.cyan('vidx list')}                   ${chalk.dim('List all videos and sizes')}`);
     console.log(`    ${chalk.cyan('vidx doctor')}                 ${chalk.dim('Check system health/FFmpeg')}`);
     console.log(`    ${chalk.cyan('vidx init')}                   ${chalk.dim('Generate .vidxrc config')}`);
@@ -93,7 +95,10 @@ export async function run() {
   const isCommand = firstArg && !firstArg.startsWith('-');
   const validCommands = ['list', 'doctor', 'init'];
 
-  if (isCommand && !validCommands.includes(firstArg)) {
+  // Check if first arg is a direct file path (e.g. vidx hero.mp4)
+  const isDirectFile = isCommand && !validCommands.includes(firstArg) && fs.existsSync(firstArg);
+
+  if (isCommand && !validCommands.includes(firstArg) && !isDirectFile) {
     console.log(chalk.red(`\n  ✖ Unknown command: "${firstArg}"`));
     console.log(chalk.dim('    Check --help for a list of valid commands.\n'));
     return;
@@ -123,7 +128,7 @@ export async function run() {
         total += v.size;
       }
       console.log(chalk.dim('  ─'.repeat(60)));
-      console.log(`  ${chalk.bold('Total Project Video Size:')} ${chalk.green(formatBytes(total))}\n`);
+      console.log(`  ${chalk.bold(`${videos.length} videos — Total:`)} ${chalk.green(formatBytes(total))}\n`);
     }
     return;
   }
@@ -185,44 +190,59 @@ export async function run() {
   }
 
   // ── Step 2: Detect videos ──────────────────────────────────────────────────
-  const scanSpinner = ora('Scanning project for video files...').start();
-  let videos;
-  try {
-    videos = await detectVideos(process.cwd(), ignorePatterns);
-    scanSpinner.stop();
-  } catch (err) {
-    scanSpinner.fail('Failed to scan for videos: ' + err.message);
-    process.exit(1);
-  }
-
-  if (videos.length === 0) {
-    console.log(chalk.yellow('\n  No video files found in this directory.\n'));
-    process.exit(0);
-  }
-
-  console.log(chalk.bold(`\n  📁 Found ${videos.length} video${videos.length > 1 ? 's' : ''} in this project:\n`));
-
-  // ── Step 3: Select videos ──────────────────────────────────────────────────
   let selectedVideos;
-  if (isNonInteractive) {
-    selectedVideos = videos;
-  } else {
-    const chosen = await checkbox({
-      message: 'Select videos to process',
-      choices: videos.map((v) => ({
-        name: `${v.relativePath.padEnd(42)} ${chalk.dim(v.sizeFormatted)}`,
-        value: v,
-        checked: videos.length === 1,
-      })),
-      pageSize: 12,
-      instructions: chalk.dim('  Space to toggle · A to select all · Enter to continue'),
-    });
 
-    if (!chosen || chosen.length === 0) {
-      console.log(chalk.yellow('\n  No videos selected. Exiting.\n'));
+  if (isDirectFile) {
+    // Direct file mode: vidx hero.mp4
+    const fullPath = path.resolve(process.cwd(), firstArg);
+    const stat = fs.statSync(fullPath);
+    selectedVideos = [{
+      name: path.basename(fullPath),
+      fullPath,
+      relativePath: path.relative(process.cwd(), fullPath),
+      size: stat.size,
+      sizeFormatted: formatBytes(stat.size),
+    }];
+    console.log(chalk.bold(`\n  📁 Direct file: ${selectedVideos[0].relativePath} (${selectedVideos[0].sizeFormatted})\n`));
+  } else {
+    const scanSpinner = ora('Scanning project for video files...').start();
+    let videos;
+    try {
+      videos = await detectVideos(process.cwd(), ignorePatterns);
+      scanSpinner.stop();
+    } catch (err) {
+      scanSpinner.fail('Failed to scan for videos: ' + err.message);
+      process.exit(1);
+    }
+
+    if (videos.length === 0) {
+      console.log(chalk.yellow('\n  No video files found in this directory.\n'));
       process.exit(0);
     }
-    selectedVideos = chosen;
+
+    console.log(chalk.bold(`\n  📁 Found ${videos.length} video${videos.length > 1 ? 's' : ''} in this project:\n`));
+
+    // ── Step 3: Select videos ──────────────────────────────────────────────────
+    if (isNonInteractive) {
+      selectedVideos = videos;
+    } else {
+      const chosen = await checkbox({
+        message: 'Select videos to process',
+        choices: videos.map((v) => ({
+          name: `${v.relativePath.padEnd(42)} ${chalk.dim(v.sizeFormatted)}`,
+          value: v,
+          checked: videos.length === 1,
+        })),
+        pageSize: 12,
+        instructions: chalk.dim('  Space to toggle · A to select all · Enter to continue'),
+      });
+
+      if (!chosen || chosen.length === 0) {
+        console.log(chalk.yellow('\n  No videos selected. Exiting.\n'));
+        process.exit(0);
+      }
+      selectedVideos = chosen;
+    }
   }
 
   // ── Step 4: Output format ──────────────────────────────────────────────────
@@ -513,10 +533,3 @@ function getArg(args, flag) {
   return i !== -1 && args[i + 1] ? args[i + 1] : null;
 }
 
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-}

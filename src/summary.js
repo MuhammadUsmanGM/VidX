@@ -1,5 +1,6 @@
 import fs from 'fs';
 import chalk from 'chalk';
+import { formatBytes } from './utils.js';
 
 /**
  * Print the final summary after all jobs complete.
@@ -41,11 +42,15 @@ export function printSummary(results, isInteractive = false) {
       const inFmt = formatBytes(inputSize);
       const outFmt = formatBytes(outputSize);
 
+      const sizeLabel = saved >= 0
+        ? chalk.yellow(`(${savedPct}% smaller) ✔`)
+        : chalk.red(`(${Math.abs(savedPct)}% larger) ⚠`);
+
       console.log(
         `    ${chalk.dim('→')} ${chalk.white(outputName.padEnd(36))}` +
         `${chalk.dim(inFmt.padStart(10))}  ${chalk.dim('→')}  ` +
         `${chalk.green(outFmt.padStart(10))}  ` +
-        chalk.yellow(`(${savedPct}% smaller) ✔`)
+        sizeLabel
       );
     }
     console.log('');
@@ -79,14 +84,6 @@ function getFileSize(filePath) {
   } catch {
     return 0;
   }
-}
-
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
 function wordWrapCmd(cmd, maxLen) {

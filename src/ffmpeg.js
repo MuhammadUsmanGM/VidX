@@ -31,3 +31,10 @@ export function detectFfmpeg() {
   resolvedFfmpegPath = { path: ffmpegStatic, version: 'bundled', isSystem: false };
   return resolvedFfmpegPath;
 }
+
+/**
+ * Reset the cached FFmpeg path. Useful for testing.
+ */
+export function resetFfmpegCache() {
+  resolvedFfmpegPath = null;
+}

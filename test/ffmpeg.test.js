@@ -1,15 +1,13 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { execSync } from 'child_process';
-
-// We need to test detectFfmpeg in isolation. Since it caches the result
-// in a module-level variable, we use dynamic imports to get a fresh module per test.
+import { describe, it, expect, beforeEach } from 'vitest';
+import { detectFfmpeg, resetFfmpegCache } from '../src/ffmpeg.js';
 
 describe('detectFfmpeg', () => {
-  it('should return an object with path, version, and isSystem', async () => {
-    // Use a fresh import to avoid cache
-    const mod = await import('../src/ffmpeg.js');
-    // Reset the cache by re-importing (the cache is module-scoped)
-    const result = mod.detectFfmpeg();
+  beforeEach(() => {
+    resetFfmpegCache();
+  });
+
+  it('should return an object with path, version, and isSystem', () => {
+    const result = detectFfmpeg();
 
     expect(result).toHaveProperty('path');
     expect(result).toHaveProperty('version');
@@ -19,16 +17,14 @@ describe('detectFfmpeg', () => {
     expect(typeof result.isSystem).toBe('boolean');
   });
 
-  it('should return cached result on second call', async () => {
-    const mod = await import('../src/ffmpeg.js');
-    const first = mod.detectFfmpeg();
-    const second = mod.detectFfmpeg();
+  it('should return cached result on second call', () => {
+    const first = detectFfmpeg();
+    const second = detectFfmpeg();
     expect(first).toBe(second); // same reference (cached)
   });
 
-  it('should detect system ffmpeg or fallback to bundled', async () => {
-    const mod = await import('../src/ffmpeg.js');
-    const result = mod.detectFfmpeg();
+  it('should detect system ffmpeg or fallback to bundled', () => {
+    const result = detectFfmpeg();
 
     if (result.isSystem) {
       expect(result.path).toBe('ffmpeg');
@@ -38,5 +34,14 @@ describe('detectFfmpeg', () => {
       expect(result.path).toBeTypeOf('string');
       expect(result.path.length).toBeGreaterThan(0);
     }
+  });
+
+  it('should return fresh result after cache reset', () => {
+    const first = detectFfmpeg();
+    resetFfmpegCache();
+    const second = detectFfmpeg();
+    // Both should have same values but be different object references
+    expect(first).not.toBe(second);
+    expect(first.path).toBe(second.path);
   });
 });

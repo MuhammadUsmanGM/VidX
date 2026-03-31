@@ -115,4 +115,12 @@ describe('printSummary', () => {
     const output = logs.join('\n');
     expect(output).toContain('1 of 2');
   });
+
+  it('should show "larger" when output is bigger than input', () => {
+    printSummary([makeResult({ inputSize: 5000, outputSize: 10000, outputName: 'bigger.mp4' })]);
+
+    const output = logs.join('\n');
+    expect(output).toContain('larger');
+    expect(output).not.toContain('smaller');
+  });
 });

@@ -99,4 +99,17 @@ describe('CLI', () => {
     const output = runCli('--yes --format mp4 --preset webOptimized --resolution 4k');
     expect(output).toContain('Invalid resolution');
   });
+
+  // ── Direct file path ──
+
+  it('should show "vidx <file>" in help text', () => {
+    const output = runCli('--help');
+    expect(output).toContain('vidx <file>');
+  });
+
+  it('should show "Direct file" when given a real file path', () => {
+    const output = runCli('package.json');
+    // package.json exists but is not a video — it will still enter direct file mode
+    expect(output).toContain('Direct file');
+  });
 });
