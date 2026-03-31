@@ -360,8 +360,10 @@ export async function run() {
   console.log('');
   const results = [];
 
-  for (const job of jobs) {
-    const label = `  Processing ${job.inputFile.name} → ${path.basename(job.outputPath)}`;
+  for (let i = 0; i < jobs.length; i++) {
+    const job = jobs[i];
+    const counter = chalk.dim(`[${i + 1}/${jobs.length}]`);
+    const label = `  ${counter} Processing ${job.inputFile.name} → ${path.basename(job.outputPath)}`;
     console.log(chalk.bold(label));
 
     const bar = new SingleBar(
