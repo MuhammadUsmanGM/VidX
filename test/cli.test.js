@@ -90,6 +90,12 @@ describe('CLI', () => {
     expect(output).toContain('Invalid format');
   });
 
+  it('should accept av1 as a valid format', () => {
+    const output = runCli('--yes --format av1 --preset webOptimized --resolution original --dry-run');
+    // Should not show "Invalid format" — either shows dry-run commands or "No video files"
+    expect(output).not.toContain('Invalid format');
+  });
+
   it('should reject invalid --preset values', () => {
     const output = runCli('--yes --format mp4 --preset ultraHD');
     expect(output).toContain('Invalid preset');

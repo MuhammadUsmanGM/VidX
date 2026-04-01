@@ -14,21 +14,25 @@ describe('PRESETS', () => {
     }
   });
 
-  it('non-custom presets should have mp4 and webm configs', () => {
+  it('non-custom presets should have mp4, webm, and av1 configs', () => {
     for (const key of ['webOptimized', 'highQuality', 'smallFile']) {
       const preset = PRESETS[key];
       expect(preset.mp4).toBeDefined();
       expect(preset.webm).toBeDefined();
+      expect(preset.av1).toBeDefined();
       expect(preset.mp4.crf).toBeTypeOf('number');
       expect(preset.webm.crf).toBeTypeOf('number');
+      expect(preset.av1.crf).toBeTypeOf('number');
       expect(preset.mp4.audioBitrate).toBeTypeOf('string');
       expect(preset.webm.audioBitrate).toBeTypeOf('string');
+      expect(preset.av1.audioBitrate).toBeTypeOf('string');
     }
   });
 
-  it('custom preset should have null mp4 and webm', () => {
+  it('custom preset should have null mp4, webm, and av1', () => {
     expect(PRESETS.custom.mp4).toBeNull();
     expect(PRESETS.custom.webm).toBeNull();
+    expect(PRESETS.custom.av1).toBeNull();
   });
 
   it('mp4 CRF values should be in valid H.264 range (0-51)', () => {
@@ -47,9 +51,18 @@ describe('PRESETS', () => {
     }
   });
 
+  it('av1 CRF values should be in valid SVT-AV1 range (0-63)', () => {
+    for (const key of ['webOptimized', 'highQuality', 'smallFile']) {
+      const crf = PRESETS[key].av1.crf;
+      expect(crf).toBeGreaterThanOrEqual(0);
+      expect(crf).toBeLessThanOrEqual(63);
+    }
+  });
+
   it('highQuality should have lower CRF than smallFile (better quality)', () => {
     expect(PRESETS.highQuality.mp4.crf).toBeLessThan(PRESETS.smallFile.mp4.crf);
     expect(PRESETS.highQuality.webm.crf).toBeLessThan(PRESETS.smallFile.webm.crf);
+    expect(PRESETS.highQuality.av1.crf).toBeLessThan(PRESETS.smallFile.av1.crf);
   });
 
   it('mp4 presets should include VBV buffering (maxrate + bufsize)', () => {
@@ -84,8 +97,8 @@ describe('RESOLUTIONS', () => {
 });
 
 describe('FORMATS', () => {
-  it('should export mp4, webm, and both', () => {
-    expect(Object.keys(FORMATS)).toEqual(['mp4', 'webm', 'both']);
+  it('should export mp4, webm, av1, and both', () => {
+    expect(Object.keys(FORMATS)).toEqual(['mp4', 'webm', 'av1', 'both']);
   });
 
   it('each format should have a label', () => {

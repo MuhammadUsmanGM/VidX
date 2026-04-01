@@ -13,6 +13,10 @@ const VIDEO_EXTENSIONS = [
   '**/*.flv',
   '**/*.m4v',
   '**/*.gif',
+  '**/*.ts',
+  '**/*.mts',
+  '**/*.3gp',
+  '**/*.ogv',
 ];
 
 const IGNORE_DIRS = [

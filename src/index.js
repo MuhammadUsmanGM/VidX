@@ -74,7 +74,7 @@ export async function run() {
     console.log('');
     console.log(chalk.bold('  Options:'));
     console.log(`    --preset <name>         webOptimized | highQuality | smallFile`);
-    console.log(`    --format <type>         mp4 | webm | both`);
+    console.log(`    --format <type>         mp4 | webm | av1 | both`);
     console.log(`    --resolution <res>      1080p | 720p | 480p | original`);
     console.log(`    --output <dir>          Output directory path`);
     console.log(`    --yes, -y               Skip confirmation prompts`);
@@ -254,8 +254,8 @@ export async function run() {
     format = Array.isArray(fmts) ? (fmts.length === 2 ? 'both' : fmts[0]) : fmts;
   }
 
-  if (format && !['mp4', 'webm', 'both'].includes(format)) {
-    console.log(chalk.red(`\n  ✖ Invalid format: "${format}". Expected mp4, webm, or both.\n`));
+  if (format && !['mp4', 'webm', 'av1', 'both'].includes(format)) {
+    console.log(chalk.red(`\n  ✖ Invalid format: "${format}". Expected mp4, webm, av1, or both.\n`));
     process.exit(1);
   }
 
@@ -265,6 +265,7 @@ export async function run() {
       choices: [
         { name: FORMATS.mp4.label, value: 'mp4' },
         { name: FORMATS.webm.label, value: 'webm' },
+        { name: FORMATS.av1.label, value: 'av1' },
         { name: FORMATS.both.label, value: 'both' },
       ],
     });
@@ -294,9 +295,12 @@ export async function run() {
     const mp4Bitrate = await input({ message: 'MP4 audio bitrate:', default: '128k' });
     const webmCrf = await number({ message: 'WebM CRF (0–63, lower = better quality):', default: 33 });
     const webmBitrate = await input({ message: 'WebM audio bitrate:', default: '96k' });
+    const av1Crf = await number({ message: 'AV1 CRF (0–63, lower = better quality):', default: 35 });
+    const av1Bitrate = await input({ message: 'AV1 audio bitrate:', default: '96k' });
     customCfg = {
       mp4: { crf: mp4Crf, preset: 'slow', audioBitrate: mp4Bitrate },
       webm: { crf: webmCrf, audioBitrate: webmBitrate },
+      av1: { crf: av1Crf, audioBitrate: av1Bitrate },
     };
   }
 
@@ -511,6 +515,7 @@ async function runInit() {
       { name: 'Both (MP4 + WebM)', value: ['mp4', 'webm'] },
       { name: 'MP4 only', value: ['mp4'] },
       { name: 'WebM only', value: ['webm'] },
+      { name: 'AV1 only', value: ['av1'] },
     ],
   });
 

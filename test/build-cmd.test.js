@@ -154,6 +154,50 @@ describe('buildCommand', () => {
     expect(args).toContain('128k');
   });
 
+  // ── AV1 format tests ──
+
+  it('should build valid av1 command with libsvtav1', () => {
+    const { args } = buildCommand({ ...baseOpts, format: 'av1', outputPath: '/out/test.av1.mp4' });
+
+    expect(args).toContain('-c:v');
+    expect(args).toContain('libsvtav1');
+    expect(args).toContain('-crf');
+    expect(args).toContain('38'); // webOptimized av1 CRF
+    expect(args).toContain('-preset');
+    expect(args).toContain('6');
+    expect(args).toContain('-pix_fmt');
+    expect(args).toContain('yuv420p');
+    expect(args).toContain('-svtav1-params');
+    expect(args).toContain('tune=0');
+    expect(args).toContain('-c:a');
+    expect(args).toContain('aac');
+    expect(args).toContain('-movflags');
+    expect(args).toContain('+faststart');
+  });
+
+  it('should add resolution scale for av1', () => {
+    const { args } = buildCommand({ ...baseOpts, format: 'av1', outputPath: '/out/test.av1.mp4', resolutionKey: '720p' });
+    expect(args).toContain('-vf');
+    expect(args).toContain('scale=-2:720');
+  });
+
+  it('should use custom av1 config', () => {
+    const custom = {
+      mp4: { crf: 20, preset: 'slow', audioBitrate: '192k' },
+      webm: { crf: 30, audioBitrate: '128k' },
+      av1: { crf: 25, audioBitrate: '128k' },
+    };
+    const { args } = buildCommand({
+      ...baseOpts,
+      format: 'av1',
+      outputPath: '/out/test.av1.mp4',
+      presetKey: 'custom',
+      custom,
+    });
+    expect(args).toContain('25');
+    expect(args).toContain('128k');
+  });
+
   // ── GIF handling tests ──
 
   it('should strip audio and add -an for GIF input (mp4)', () => {
@@ -177,6 +221,18 @@ describe('buildCommand', () => {
     expect(args).toContain('-an');
     expect(args).not.toContain('-c:a');
     expect(args).not.toContain('libopus');
+  });
+
+  it('should strip audio and add -an for GIF input (av1)', () => {
+    const { args } = buildCommand({
+      ...baseOpts,
+      inputPath: '/videos/animation.gif',
+      outputPath: '/out/animation.av1.mp4',
+      format: 'av1',
+    });
+    expect(args).toContain('-an');
+    expect(args).not.toContain('-c:a');
+    expect(args).not.toContain('aac');
   });
 
   it('should handle uppercase .GIF extension', () => {
@@ -333,5 +389,35 @@ describe('buildJobs', () => {
     });
 
     expect(jobs).toHaveLength(0);
+  });
+
+  it('should use .av1.mp4 extension for av1 format', () => {
+    const jobs = buildJobs({
+      files: [makeFile('clip.mov')],
+      format: 'av1',
+      outputDir: tmpDir,
+      presetKey: 'webOptimized',
+      resolutionKey: 'original',
+      ffmpegPath: 'ffmpeg',
+    });
+
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0].outputPath).toMatch(/clip\.av1\.mp4$/);
+    expect(jobs[0].format).toBe('av1');
+  });
+
+  it('should not include av1 in "both" format', () => {
+    const jobs = buildJobs({
+      files: [makeFile('clip.mov')],
+      format: 'both',
+      outputDir: tmpDir,
+      presetKey: 'webOptimized',
+      resolutionKey: 'original',
+      ffmpegPath: 'ffmpeg',
+    });
+
+    expect(jobs).toHaveLength(2);
+    expect(jobs[0].format).toBe('mp4');
+    expect(jobs[1].format).toBe('webm');
   });
 });

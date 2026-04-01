@@ -38,9 +38,28 @@ describe('detectVideos', () => {
     createFile('g.flv', 7000);
     createFile('h.m4v', 8000);
     createFile('i.gif', 9000);
+    createFile('j.ts', 10000);
+    createFile('k.mts', 11000);
+    createFile('l.3gp', 12000);
+    createFile('m.ogv', 13000);
 
     const files = await detectVideos(tmpDir);
-    expect(files).toHaveLength(9);
+    expect(files).toHaveLength(13);
+  });
+
+  it('should detect ts, mts, 3gp, and ogv formats', async () => {
+    createFile('screen.ts', 1000);
+    createFile('camera.mts', 2000);
+    createFile('mobile.3gp', 3000);
+    createFile('open.ogv', 4000);
+
+    const files = await detectVideos(tmpDir);
+    expect(files).toHaveLength(4);
+    const names = files.map((f) => f.name);
+    expect(names).toContain('screen.ts');
+    expect(names).toContain('camera.mts');
+    expect(names).toContain('mobile.3gp');
+    expect(names).toContain('open.ogv');
   });
 
   it('should ignore non-video files', async () => {

@@ -34,6 +34,12 @@ function getUniquePath(dest) {
  *   - deadline good + cpu-used 2 → critical for real compression (default is lossless-quality)
  *   - row-mt 1 → enables row-based multithreading for speed
  *   - map_metadata -1 → strips metadata
+ *
+ * AV1 (SVT-AV1):
+ *   - libsvtav1 in CRF mode, preset 6 (balanced speed/quality)
+ *   - pix_fmt yuv420p → browser compatibility
+ *   - Output in MP4 container (.av1.mp4) for broad browser support
+ *   - movflags +faststart → streaming before full download
  */
 export function buildCommand({ ffmpegPath, inputPath, outputPath, format, presetKey, resolutionKey, custom }) {
   if (presetKey === 'custom' && !custom) {
@@ -73,6 +79,19 @@ export function buildCommand({ ffmpegPath, inputPath, outputPath, format, preset
     if (resolution.scale) args.push('-vf', resolution.scale);
     args.push('-c:a', 'libopus');
     args.push('-b:a', cfg.audioBitrate || '80k');
+
+  } else if (format === 'av1') {
+    const cfg = presetKey === 'custom' ? custom.av1 : preset.av1;
+
+    args.push('-c:v', 'libsvtav1');
+    args.push('-crf', String(cfg.crf));
+    args.push('-preset', '6');               // 0=slowest/best, 13=fastest/worst
+    args.push('-pix_fmt', 'yuv420p');
+    args.push('-svtav1-params', 'tune=0');   // visual quality tuning
+    if (resolution.scale) args.push('-vf', resolution.scale);
+    args.push('-c:a', 'aac');
+    args.push('-b:a', cfg.audioBitrate || '96k');
+    args.push('-movflags', '+faststart');
   }
 
   // GIF Safety: If source is GIF, disable audio to avoid FFmpeg warnings/waste
@@ -106,7 +125,8 @@ export function buildJobs({ files, format, outputDir, presetKey, resolutionKey, 
   for (const file of files) {
     const baseName = path.basename(file.name, path.extname(file.name));
     for (const fmt of formats) {
-      const initialPath = path.join(outputDir, `${baseName}.${fmt}`);
+      const ext = fmt === 'av1' ? 'av1.mp4' : fmt;
+      const initialPath = path.join(outputDir, `${baseName}.${ext}`);
       const outputPath = getUniquePath(initialPath);
 
       const { cmd, args } = buildCommand({
