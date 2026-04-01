@@ -22,9 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bottom of every run (e.g. `Total   142.3 MB → 38.1 MB   73% smaller ✔  •  48.2s`),
   aggregating input size, output size, savings percentage, and wall-clock time across all jobs.
 - **AV1 format** (`--format av1` / `--format mp4,webm,av1`) — Full SVT-AV1 encoding support
-  via `libsvtav1` in CRF mode. Uses preset 6 (balanced speed/quality), `tune=0` for visual
-  quality, `pix_fmt yuv420p` for browser compatibility, and `movflags +faststart` for streaming.
-  Output is packed in an MP4 container as `.av1.mp4` for the broadest modern browser support.
+  via `libsvtav1` in CRF mode. Employs per-quality encoder presets (4-6) and `lookahead=120`
+  to maximize compression efficiency. Uses `tune=0` for visual quality, `pix_fmt yuv420p`
+  for browser compatibility, and `movflags +faststart` for streaming. Output is packed
+  in an MP4 container as `.av1.mp4` for the broadest modern browser support.
   All three quality presets (`Web Optimized`, `High Quality`, `Small File`) now include
   tuned AV1 CRF values (38, 28, and 48 respectively).
 - **`vidx <file>` direct file mode** — Pass a file path directly (e.g. `vidx hero.mp4`) to

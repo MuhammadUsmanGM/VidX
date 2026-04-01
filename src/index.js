@@ -232,7 +232,7 @@ export async function run() {
     if (isNonInteractive) {
       selectedVideos = videos;
     } else {
-      console.log(chalk.dim('  [ Space ] toggle  ·  [ A ] all  ·  [ Enter ] confirm\n'));
+      console.log(chalk.dim('  [ Space ] select  ·  [ A ] all  ·  [ Enter ] confirm\n'));
       let chosen = [];
       while (chosen.length === 0) {
         chosen = await checkbox({
@@ -247,7 +247,7 @@ export async function run() {
         });
 
         if (chosen.length === 0) {
-          console.log(chalk.yellow('  ⚠  Nothing selected — press Space to toggle a file, then Enter.\n'));
+          console.log(chalk.yellow('  ⚠  Nothing selected — press Space to select a file, then Enter.\n'));
         }
       }
       selectedVideos = chosen;
