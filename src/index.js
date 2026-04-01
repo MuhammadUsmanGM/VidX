@@ -232,20 +232,23 @@ export async function run() {
     if (isNonInteractive) {
       selectedVideos = videos;
     } else {
-      const chosen = await checkbox({
-        message: 'Select videos to process',
-        choices: videos.map((v) => ({
-          name: `${v.relativePath.padEnd(42)} ${chalk.dim(v.sizeFormatted)}`,
-          value: v,
-          checked: videos.length === 1,
-        })),
-        pageSize: 12,
-        instructions: chalk.dim('  Space to toggle · A to select all · Enter to continue'),
-      });
+      console.log(chalk.dim('  [ Space ] toggle  ·  [ A ] all  ·  [ Enter ] confirm\n'));
+      let chosen = [];
+      while (chosen.length === 0) {
+        chosen = await checkbox({
+          message: 'Select videos to process',
+          choices: videos.map((v) => ({
+            name: `${v.relativePath.padEnd(42)} ${chalk.dim(v.sizeFormatted)}`,
+            value: v,
+            checked: videos.length === 1,
+          })),
+          pageSize: 12,
+          instructions: false,   // suppress the default dim footer — our hint above is clearer
+        });
 
-      if (!chosen || chosen.length === 0) {
-        console.log(chalk.yellow('\n  No videos selected. Exiting.\n'));
-        process.exit(0);
+        if (chosen.length === 0) {
+          console.log(chalk.yellow('  ⚠  Nothing selected — press Space to toggle a file, then Enter.\n'));
+        }
       }
       selectedVideos = chosen;
     }
