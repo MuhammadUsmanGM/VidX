@@ -7,7 +7,7 @@ import { formatBytes } from './utils.js';
  *
  * @param {boolean} isInteractive
  */
-export function printSummary(results, isInteractive = false) {
+export function printSummary(results, isInteractive = false, isQuiet = false) {
   const totalMs = results.reduce((acc, r) => acc + (r.durationMs || 0), 0);
   const totalSec = (totalMs / 1000).toFixed(1);
 
@@ -56,9 +56,32 @@ export function printSummary(results, isInteractive = false) {
     console.log('');
   }
 
-  // FFmpeg commands footer
+  // Total savings across all successful jobs
   const successful = results.filter((r) => r.success);
   if (successful.length > 0) {
+    const totalIn  = successful.reduce((s, r) => s + r.job.inputFile.size, 0);
+    const totalOut = successful.reduce((s, r) => s + getFileSize(r.job.outputPath), 0);
+    const totalSaved = totalIn - totalOut;
+    const totalPct  = totalIn > 0 ? Math.round((totalSaved / totalIn) * 100) : 0;
+    const totalSec  = (results.reduce((acc, r) => acc + (r.durationMs || 0), 0) / 1000).toFixed(1);
+    const totalLabel = totalSaved >= 0
+      ? chalk.green(`${totalPct}% smaller ✔`)
+      : chalk.red(`${Math.abs(totalPct)}% larger ⚠`);
+
+    console.log(chalk.dim('─'.repeat(60)));
+    console.log(
+      `  ${chalk.bold('Total')}   ` +
+      `${chalk.dim(formatBytes(totalIn).padStart(9))}  ${chalk.dim('→')}  ` +
+      `${chalk.green(formatBytes(totalOut).padStart(9))}   ` +
+      totalLabel +
+      chalk.dim(`   •  ${totalSec}s`)
+    );
+    console.log(chalk.dim('─'.repeat(60)));
+    console.log('');
+  }
+
+  // FFmpeg commands footer
+  if (!isQuiet && successful.length > 0) {
     console.log(chalk.dim('─'.repeat(60)));
     console.log(chalk.dim('  FFmpeg commands used:'));
     console.log('');
@@ -70,7 +93,7 @@ export function printSummary(results, isInteractive = false) {
   }
 
   // CTA Footer for humans
-  if (isInteractive) {
+  if (isInteractive && !isQuiet) {
     console.log('');
     console.log(chalk.dim('  ⭐ Like VidX? Star the repo  →  github.com/MuhammadUsmanGM/VidX'));
     console.log(chalk.dim('  🐛 Bug or idea? Open an issue →  github.com/MuhammadUsmanGM/VidX/issues'));

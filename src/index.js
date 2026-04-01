@@ -61,6 +61,7 @@ export async function run() {
   const args = process.argv.slice(2);
   const isNonInteractive = args.includes('--yes') || args.includes('-y');
   const isDryRun = args.includes('--dry-run');
+  const isQuiet = args.includes('--quiet') || args.includes('-q');
 
   // ── Version & Help ──────────────────────────────────────────────────────────
   if (args.includes('--help') || args.includes('-h')) {
@@ -79,6 +80,7 @@ export async function run() {
     console.log(`    --output <dir>          Output directory path`);
     console.log(`    --yes, -y               Skip confirmation prompts`);
     console.log(`    --dry-run               Show commands without executing`);
+    console.log(`    --quiet, -q             Suppress banner/spinners; print errors + summary only`);
     console.log(`    --version, -v           Show version`);
     console.log(`    --help, -h              Show this help menu`);
     console.log('');
@@ -104,7 +106,7 @@ export async function run() {
     return;
   }
 
-  printBanner();
+  if (!isQuiet) printBanner();
 
   // Load config early for ignore/defaults
   const config = loadConfig();
@@ -171,21 +173,24 @@ export async function run() {
   }
 
   // ── Step 1: FFmpeg check ────────────────────────────────────────────────────
-  const spinner = ora('Checking for FFmpeg...').start();
+  const spinner = isQuiet ? null : ora('Checking for FFmpeg...').start();
   let ffmpeg;
   try {
     ffmpeg = detectFfmpeg();
-    if (ffmpeg.isSystem) {
-      spinner.succeed(chalk.green(`FFmpeg detected on your system (v${ffmpeg.version})`));
-    } else {
-      spinner.info(chalk.yellow('FFmpeg not found on system. Using bundled version...'));
+    if (!isQuiet) {
+      if (ffmpeg.isSystem) {
+        spinner.succeed(chalk.green(`FFmpeg detected on your system (v${ffmpeg.version})`));
+      } else {
+        spinner.info(chalk.yellow('FFmpeg not found on system. Using bundled version...'));
+      }
     }
   } catch (err) {
-    spinner.fail(chalk.red(err.message));
+    if (spinner) spinner.fail(chalk.red(err.message));
+    else console.error(chalk.red('  ✖ ' + err.message));
     process.exit(1);
   }
 
-  if (config) {
+  if (config && !isQuiet) {
     console.log(chalk.dim(`  Config loaded from .vidxrc`));
   }
 
@@ -203,15 +208,16 @@ export async function run() {
       size: stat.size,
       sizeFormatted: formatBytes(stat.size),
     }];
-    console.log(chalk.bold(`\n  📁 Direct file: ${selectedVideos[0].relativePath} (${selectedVideos[0].sizeFormatted})\n`));
+    if (!isQuiet) console.log(chalk.bold(`\n  📁 Direct file: ${selectedVideos[0].relativePath} (${selectedVideos[0].sizeFormatted})\n`));
   } else {
-    const scanSpinner = ora('Scanning project for video files...').start();
+    const scanSpinner = isQuiet ? null : ora('Scanning project for video files...').start();
     let videos;
     try {
       videos = await detectVideos(process.cwd(), ignorePatterns);
-      scanSpinner.stop();
+      if (scanSpinner) scanSpinner.stop();
     } catch (err) {
-      scanSpinner.fail('Failed to scan for videos: ' + err.message);
+      if (scanSpinner) scanSpinner.fail('Failed to scan for videos: ' + err.message);
+      else console.error(chalk.red('  ✖ Failed to scan for videos: ' + err.message));
       process.exit(1);
     }
 
@@ -220,7 +226,7 @@ export async function run() {
       process.exit(0);
     }
 
-    console.log(chalk.bold(`\n  📁 Found ${videos.length} video${videos.length > 1 ? 's' : ''} in this project:\n`));
+    if (!isQuiet) console.log(chalk.bold(`\n  📁 Found ${videos.length} video${videos.length > 1 ? 's' : ''} in this project:\n`));
 
     // ── Step 3: Select videos ──────────────────────────────────────────────────
     if (isNonInteractive) {
@@ -242,6 +248,40 @@ export async function run() {
         process.exit(0);
       }
       selectedVideos = chosen;
+    }
+  }
+
+  // ── Small-file guard ───────────────────────────────────────────────────────
+  const SMALL_FILE_THRESHOLD = 500 * 1024; // 500 KB
+  const tinyFiles = selectedVideos.filter((v) => v.size < SMALL_FILE_THRESHOLD);
+
+  if (tinyFiles.length > 0) {
+    for (const v of tinyFiles) {
+      console.log(
+        chalk.yellow(`  ⚠ ${v.relativePath || v.name} is only ${v.sizeFormatted} — re-encoding tiny files rarely saves space.`)
+      );
+    }
+
+    if (isNonInteractive || isQuiet) {
+      // Auto-skip in CI / quiet mode
+      selectedVideos = selectedVideos.filter((v) => v.size >= SMALL_FILE_THRESHOLD);
+      if (selectedVideos.length === 0) {
+        console.log(chalk.yellow('  All selected files are below 500 KB. Nothing to do.\n'));
+        process.exit(0);
+      }
+      console.log(chalk.dim(`  Skipping ${tinyFiles.length} file(s) below 500 KB threshold.\n`));
+    } else {
+      const keepTiny = await confirm({
+        message: `Continue processing ${tinyFiles.length > 1 ? 'these small files' : 'this small file'} anyway?`,
+        default: false,
+      });
+      if (!keepTiny) {
+        selectedVideos = selectedVideos.filter((v) => v.size >= SMALL_FILE_THRESHOLD);
+        if (selectedVideos.length === 0) {
+          console.log(chalk.yellow('\n  Nothing left to process. Exiting.\n'));
+          process.exit(0);
+        }
+      }
     }
   }
 
@@ -349,7 +389,7 @@ export async function run() {
   outputDir = path.resolve(process.cwd(), outputDir);
 
   // ── Step 8: Confirmation ───────────────────────────────────────────────────
-  if (!isNonInteractive) {
+  if (!isNonInteractive && !isQuiet) {
     console.log('');
     console.log(chalk.bold('  ✅ Ready to process ' + selectedVideos.length + ' video' + (selectedVideos.length > 1 ? 's' : '')));
     console.log('');
@@ -357,6 +397,33 @@ export async function run() {
     console.log(`     ${chalk.dim('Preset     :')} ${PRESETS[presetKey]?.label || 'Custom'}`);
     console.log(`     ${chalk.dim('Resolution :')} ${RESOLUTIONS[resolutionKey]?.label || resolutionKey}`);
     console.log(`     ${chalk.dim('Output     :')} ${path.relative(process.cwd(), outputDir)}/`);
+    console.log('');
+
+    // ── Estimated output sizes ──────────────────────────────────────────────
+    // Approximate compression ratios derived from typical CRF targets per preset.
+    // These are rough heuristics — actual results vary with source content.
+    const EST_RATIOS = {
+      webOptimized: { mp4: 0.20, webm: 0.15, av1: 0.12 },
+      highQuality:  { mp4: 0.35, webm: 0.28, av1: 0.22 },
+      smallFile:    { mp4: 0.12, webm: 0.09, av1: 0.07 },
+      custom:       { mp4: 0.25, webm: 0.20, av1: 0.18 },
+    };
+    const ratios = EST_RATIOS[presetKey] || EST_RATIOS.custom;
+    const totalInputBytes = selectedVideos.reduce((s, v) => s + v.size, 0);
+
+    console.log(chalk.bold('  📊 Estimated output sizes (approximate):'));
+    console.log('');
+    for (const fmt of selectedFormats) {
+      const ratio = ratios[fmt] ?? 0.20;
+      const estBytes = Math.round(totalInputBytes * ratio);
+      const estPct = Math.round(ratio * 100);
+      console.log(
+        `     ${chalk.dim(fmt.toUpperCase().padEnd(6))}  ${formatBytes(totalInputBytes).padStart(9)}  →  ` +
+        `${chalk.cyan(formatBytes(estBytes).padStart(9))}  ${chalk.dim(`(~${estPct}% of original)`)}`
+      );
+    }
+    console.log('');
+    console.log(chalk.dim('     Estimates are based on typical CRF ratios and may vary significantly.'));
     console.log('');
 
     if (isDryRun) {
@@ -403,9 +470,10 @@ export async function run() {
     const job = jobs[i];
     const counter = chalk.dim(`[${i + 1}/${jobs.length}]`);
     const label = `  ${counter} Processing ${job.inputFile.name} → ${path.basename(job.outputPath)}`;
-    console.log(chalk.bold(label));
+    if (!isQuiet) console.log(chalk.bold(label));
 
-    const bar = new SingleBar(
+    // In quiet mode we skip the progress bar entirely
+    const bar = isQuiet ? null : new SingleBar(
       {
         format: `  ${theme.brandDim('{bar}')} {percentage}%  —  {status}  ${chalk.dim('·  eta {eta_formatted}')}`,
         barCompleteChar: '█',
@@ -416,25 +484,24 @@ export async function run() {
       Presets.shades_classic
     );
 
-    bar.start(100, 0, { status: 'starting...' });
+    if (bar) bar.start(100, 0, { status: 'starting...' });
     const start = Date.now();
 
     try {
       await runFfmpeg(job, bar);
-      bar.update(100, { status: chalk.green('done ✔') });
-      bar.stop();
+      if (bar) { bar.update(100, { status: chalk.green('done ✔') }); bar.stop(); }
       results.push({ job, success: true, durationMs: Date.now() - start });
     } catch (err) {
-      bar.stop();
-      console.log(chalk.red(`  ✖ Failed: ${err.message}`));
+      if (bar) bar.stop();
+      console.error(chalk.red(`  ✖ Failed: ${err.message}`));
       results.push({ job, success: false, durationMs: Date.now() - start, error: err.message });
     }
 
-    console.log('');
+    if (!isQuiet) console.log('');
   }
 
   // ── Step 10: Summary ───────────────────────────────────────────────────────
-  printSummary(results, !isNonInteractive);
+  printSummary(results, !isNonInteractive && !isQuiet, isQuiet);
 }
 
 // ─── FFmpeg runner ─────────────────────────────────────────────────────────────
@@ -451,6 +518,8 @@ function runFfmpeg(job, bar) {
     proc.stderr.on('data', (chunk) => {
       const text = chunk.toString();
       stderrBuf += text;
+
+      if (!bar) return; // quiet mode — skip all progress parsing
 
       // Parse total duration
       if (!duration) {
