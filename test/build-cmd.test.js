@@ -288,7 +288,7 @@ describe('buildJobs', () => {
   it('should create one job per file for a single format', () => {
     const jobs = buildJobs({
       files: [makeFile('video1.mp4'), makeFile('video2.mov')],
-      format: 'mp4',
+      formats: ['mp4'],
       outputDir: tmpDir,
       presetKey: 'webOptimized',
       resolutionKey: 'original',
@@ -300,10 +300,10 @@ describe('buildJobs', () => {
     expect(jobs[1].format).toBe('mp4');
   });
 
-  it('should create two jobs per file when format is "both"', () => {
+  it('should create two jobs per file for two formats', () => {
     const jobs = buildJobs({
       files: [makeFile('video1.mp4')],
-      format: 'both',
+      formats: ['mp4', 'webm'],
       outputDir: tmpDir,
       presetKey: 'webOptimized',
       resolutionKey: 'original',
@@ -315,10 +315,26 @@ describe('buildJobs', () => {
     expect(jobs[1].format).toBe('webm');
   });
 
+  it('should create three jobs per file for all three formats', () => {
+    const jobs = buildJobs({
+      files: [makeFile('video1.mp4')],
+      formats: ['mp4', 'webm', 'av1'],
+      outputDir: tmpDir,
+      presetKey: 'webOptimized',
+      resolutionKey: 'original',
+      ffmpegPath: 'ffmpeg',
+    });
+
+    expect(jobs).toHaveLength(3);
+    expect(jobs[0].format).toBe('mp4');
+    expect(jobs[1].format).toBe('webm');
+    expect(jobs[2].format).toBe('av1');
+  });
+
   it('should use correct output file extensions', () => {
     const jobs = buildJobs({
       files: [makeFile('clip.mov')],
-      format: 'both',
+      formats: ['mp4', 'webm'],
       outputDir: tmpDir,
       presetKey: 'webOptimized',
       resolutionKey: 'original',
@@ -330,12 +346,11 @@ describe('buildJobs', () => {
   });
 
   it('should generate unique paths when output already exists', () => {
-    // Create a file that would conflict
     fs.writeFileSync(path.join(tmpDir, 'video1.mp4'), 'existing');
 
     const jobs = buildJobs({
       files: [makeFile('video1.mp4')],
-      format: 'mp4',
+      formats: ['mp4'],
       outputDir: tmpDir,
       presetKey: 'webOptimized',
       resolutionKey: 'original',
@@ -352,7 +367,7 @@ describe('buildJobs', () => {
 
     const jobs = buildJobs({
       files: [makeFile('video1.mp4')],
-      format: 'mp4',
+      formats: ['mp4'],
       outputDir: tmpDir,
       presetKey: 'webOptimized',
       resolutionKey: 'original',
@@ -365,7 +380,7 @@ describe('buildJobs', () => {
   it('should include cmd and args in each job', () => {
     const jobs = buildJobs({
       files: [makeFile('video1.mp4')],
-      format: 'mp4',
+      formats: ['mp4'],
       outputDir: tmpDir,
       presetKey: 'webOptimized',
       resolutionKey: 'original',
@@ -381,7 +396,7 @@ describe('buildJobs', () => {
   it('should handle empty files array', () => {
     const jobs = buildJobs({
       files: [],
-      format: 'mp4',
+      formats: ['mp4'],
       outputDir: tmpDir,
       presetKey: 'webOptimized',
       resolutionKey: 'original',
@@ -394,7 +409,7 @@ describe('buildJobs', () => {
   it('should use .av1.mp4 extension for av1 format', () => {
     const jobs = buildJobs({
       files: [makeFile('clip.mov')],
-      format: 'av1',
+      formats: ['av1'],
       outputDir: tmpDir,
       presetKey: 'webOptimized',
       resolutionKey: 'original',
@@ -404,20 +419,5 @@ describe('buildJobs', () => {
     expect(jobs).toHaveLength(1);
     expect(jobs[0].outputPath).toMatch(/clip\.av1\.mp4$/);
     expect(jobs[0].format).toBe('av1');
-  });
-
-  it('should not include av1 in "both" format', () => {
-    const jobs = buildJobs({
-      files: [makeFile('clip.mov')],
-      format: 'both',
-      outputDir: tmpDir,
-      presetKey: 'webOptimized',
-      resolutionKey: 'original',
-      ffmpegPath: 'ffmpeg',
-    });
-
-    expect(jobs).toHaveLength(2);
-    expect(jobs[0].format).toBe('mp4');
-    expect(jobs[1].format).toBe('webm');
   });
 });

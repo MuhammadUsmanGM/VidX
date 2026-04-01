@@ -97,8 +97,8 @@ describe('RESOLUTIONS', () => {
 });
 
 describe('FORMATS', () => {
-  it('should export mp4, webm, av1, and both', () => {
-    expect(Object.keys(FORMATS)).toEqual(['mp4', 'webm', 'av1', 'both']);
+  it('should export mp4, webm, and av1', () => {
+    expect(Object.keys(FORMATS)).toEqual(['mp4', 'webm', 'av1']);
   });
 
   it('each format should have a label', () => {

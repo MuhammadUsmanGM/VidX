@@ -117,10 +117,8 @@ export function buildCommand({ ffmpegPath, inputPath, outputPath, format, preset
 /**
  * Given a config object, produce all { inputPath, outputPath, format } jobs.
  */
-export function buildJobs({ files, format, outputDir, presetKey, resolutionKey, custom, ffmpegPath }) {
+export function buildJobs({ files, formats, outputDir, presetKey, resolutionKey, custom, ffmpegPath }) {
   const jobs = [];
-
-  const formats = format === 'both' ? ['mp4', 'webm'] : [format];
 
   for (const file of files) {
     const baseName = path.basename(file.name, path.extname(file.name));

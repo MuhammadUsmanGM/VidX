@@ -8,7 +8,7 @@ import path from 'path';
 
 import { detectVideos } from './detect.js';
 import { detectFfmpeg } from './ffmpeg.js';
-import { PRESETS, RESOLUTIONS, FORMATS } from './presets.js';
+import { PRESETS, RESOLUTIONS, FORMATS, VALID_FORMATS } from './presets.js';
 import { buildJobs } from './build-cmd.js';
 import { printSummary } from './summary.js';
 import { loadConfig } from './config.js';
@@ -74,7 +74,7 @@ export async function run() {
     console.log('');
     console.log(chalk.bold('  Options:'));
     console.log(`    --preset <name>         webOptimized | highQuality | smallFile`);
-    console.log(`    --format <type>         mp4 | webm | av1 | both`);
+    console.log(`    --format <type>         mp4 | webm | av1 (comma-separated for multiple)`);
     console.log(`    --resolution <res>      1080p | 720p | 480p | original`);
     console.log(`    --output <dir>          Output directory path`);
     console.log(`    --yes, -y               Skip confirmation prompts`);
@@ -246,29 +246,43 @@ export async function run() {
   }
 
   // ── Step 4: Output format ──────────────────────────────────────────────────
-  let format = getArg(args, '--format') || null;
+  let selectedFormats = null;
 
-  // Normalize config format array (["mp4","webm"] → "both")
-  if (!format && config?.formats) {
-    const fmts = config.formats;
-    format = Array.isArray(fmts) ? (fmts.length === 2 ? 'both' : fmts[0]) : fmts;
+  // Parse --format flag (supports comma-separated: --format mp4,av1)
+  const formatArg = getArg(args, '--format');
+  if (formatArg) {
+    selectedFormats = formatArg.split(',').map((f) => f.trim());
   }
 
-  if (format && !['mp4', 'webm', 'av1', 'both'].includes(format)) {
-    console.log(chalk.red(`\n  ✖ Invalid format: "${format}". Expected mp4, webm, av1, or both.\n`));
-    process.exit(1);
+  // Fall back to config formats array
+  if (!selectedFormats && config?.formats) {
+    selectedFormats = Array.isArray(config.formats) ? config.formats : [config.formats];
   }
 
-  if (!format) {
-    format = await select({
-      message: '🎯 Output format?',
-      choices: [
-        { name: FORMATS.mp4.label, value: 'mp4' },
-        { name: FORMATS.webm.label, value: 'webm' },
-        { name: FORMATS.av1.label, value: 'av1' },
-        { name: FORMATS.both.label, value: 'both' },
-      ],
+  // Validate all format values
+  if (selectedFormats) {
+    const invalid = selectedFormats.find((f) => !VALID_FORMATS.includes(f));
+    if (invalid) {
+      console.log(chalk.red(`\n  ✖ Invalid format: "${invalid}". Expected mp4, webm, or av1.\n`));
+      process.exit(1);
+    }
+  }
+
+  // Interactive multi-select if no formats provided
+  if (!selectedFormats) {
+    selectedFormats = await checkbox({
+      message: '🎯 Output format(s)?',
+      choices: Object.entries(FORMATS).map(([key, f]) => ({
+        name: f.label,
+        value: key,
+      })),
+      instructions: chalk.dim('  Space to toggle · Enter to continue'),
     });
+
+    if (!selectedFormats || selectedFormats.length === 0) {
+      console.log(chalk.yellow('\n  No formats selected. Exiting.\n'));
+      process.exit(0);
+    }
   }
 
   // ── Step 5: Quality preset ─────────────────────────────────────────────────
@@ -339,7 +353,7 @@ export async function run() {
     console.log('');
     console.log(chalk.bold('  ✅ Ready to process ' + selectedVideos.length + ' video' + (selectedVideos.length > 1 ? 's' : '')));
     console.log('');
-    console.log(`     ${chalk.dim('Format     :')} ${format}`);
+    console.log(`     ${chalk.dim('Format     :')} ${selectedFormats.join(', ')}`);
     console.log(`     ${chalk.dim('Preset     :')} ${PRESETS[presetKey]?.label || 'Custom'}`);
     console.log(`     ${chalk.dim('Resolution :')} ${RESOLUTIONS[resolutionKey]?.label || resolutionKey}`);
     console.log(`     ${chalk.dim('Output     :')} ${path.relative(process.cwd(), outputDir)}/`);
@@ -364,7 +378,7 @@ export async function run() {
   // ── Build jobs ──────────────────────────────────────────────────────────────
   const jobs = buildJobs({
     files: selectedVideos,
-    format,
+    formats: selectedFormats,
     outputDir,
     presetKey,
     resolutionKey,
@@ -509,14 +523,13 @@ async function runInit() {
       .map(([key, p]) => ({ name: p.label, value: key })),
   });
 
-  const formats = await select({
-    message: 'Default output format?',
-    choices: [
-      { name: 'Both (MP4 + WebM)', value: ['mp4', 'webm'] },
-      { name: 'MP4 only', value: ['mp4'] },
-      { name: 'WebM only', value: ['webm'] },
-      { name: 'AV1 only', value: ['av1'] },
-    ],
+  const formats = await checkbox({
+    message: 'Default output format(s)?',
+    choices: Object.entries(FORMATS).map(([key, f]) => ({
+      name: f.label,
+      value: key,
+    })),
+    instructions: chalk.dim('  Space to toggle · Enter to continue'),
   });
 
   const resolution = await select({

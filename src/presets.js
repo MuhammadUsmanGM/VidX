@@ -47,5 +47,6 @@ export const FORMATS = {
   mp4: { label: 'MP4   — H.264, best browser compatibility' },
   webm: { label: 'WebM  — VP9, best compression for web' },
   av1: { label: 'AV1   — SVT-AV1 in MP4, next-gen compression' },
-  both: { label: 'Both  — generate MP4 + WebM versions' },
 };
+
+export const VALID_FORMATS = ['mp4', 'webm', 'av1'];
