@@ -1,6 +1,6 @@
 {
   "name": "@muhammadusmangm/vidx",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Video transformation for the web — without the FFmpeg pain.",
   "main": "src/index.js",
   "bin": {

@@ -7,6 +7,7 @@
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-f97316?style=flat-square" alt="platforms">
   <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-f97316?style=flat-square" alt="node version">
   <img src="https://img.shields.io/github/stars/MuhammadUsmanGM/VidX?style=flat-square&color=ea580c" alt="stars">
+  <img src="https://github.com/MuhammadUsmanGM/VidX/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI">
 </p>
 
 > **Video transformation for the web — without the FFmpeg pain.**
@@ -70,6 +71,7 @@ VidX will scan for videos, walk you through your options, and handle the rest.
 | Command | Description |
 |---|---|
 | `vidx` | Launch the interactive TUI |
+| `vidx <file>` | Compress a single file directly (e.g. `vidx hero.mp4`) |
 | `vidx list` | List all video files and their sizes |
 | `vidx init` | Generate a `.vidxrc` config file |
 | `vidx doctor` | Check FFmpeg and system status |
@@ -81,11 +83,12 @@ VidX will scan for videos, walk you through your options, and handle the rest.
 | Flag | Values | Description |
 |---|---|---|
 | `--preset` | `webOptimized` `highQuality` `smallFile` | Quality preset |
-| `--format` | `mp4` `webm` `both` | Output format |
+| `--format` | `mp4` `webm` `av1` | Output format (comma-separated for multiple) |
 | `--resolution` | `1080p` `720p` `480p` `original` | Output resolution |
 | `--output` | any path | Output directory |
 | `--yes, -y` | — | Skip all prompts (CI/CD mode) |
 | `--dry-run` | — | Print FFmpeg commands without running |
+| `--quiet, -q` | — | Suppress banner/spinners; print errors + summary only |
 | `--version, -v` | — | Show version |
 | `--help, -h` | — | Show help |
 
@@ -94,19 +97,27 @@ VidX will scan for videos, walk you through your options, and handle the rest.
 Perfect for build scripts and CI/CD pipelines:
 
 ```bash
-vidx --preset webOptimized --format both --resolution 720p --output ./dist/videos --yes
+vidx --preset webOptimized --format mp4,webm --resolution 720p --output ./dist/videos --yes
+```
+
+### CI / Quiet Mode
+
+Suppresses all interactive output — only errors and the final summary are printed:
+
+```bash
+vidx --preset webOptimized --format mp4 --resolution 720p --output ./dist/videos --yes --quiet
 ```
 
 ---
 
 ## 🎛️ Presets
 
-| Preset | MP4 CRF | WebM CRF | Best For |
-|---|---|---|---|
-| **Web Optimized** ⭐ | 32 | 42 | Most websites — great balance of size and quality |
-| **High Quality** | 24 | 32 | Hero videos, product showcases, landing pages |
-| **Small File** | 38 | 50 | Background loops, mobile-first, maximum compression |
-| **Custom** | You choose | You choose | Full manual control over CRF and bitrate |
+| Preset | MP4 CRF | WebM CRF | AV1 CRF | Best For |
+|---|---|---|---|---|
+| **Web Optimized** ⭐ | 32 | 42 | 38 | Most websites — great balance of size and quality |
+| **High Quality** | 24 | 32 | 28 | Hero videos, product showcases, landing pages |
+| **Small File** | 38 | 50 | 48 | Background loops, mobile-first, maximum compression |
+| **Custom** | You choose | You choose | You choose | Full manual control over CRF and bitrate |
 
 > **What is CRF?** Constant Rate Factor controls quality. Lower = better quality, bigger file. Higher = smaller file, more compression. VidX picks the right value for each use case automatically.
 
@@ -137,17 +148,19 @@ Next time you run `vidx`, it loads your config and skips straight to the confirm
 
 ## 🌐 Output Formats
 
-| Format | Codec | Audio | Notes |
-|---|---|---|---|
-| **MP4** | H.264 (libx264) | AAC | Best compatibility — works in every browser |
-| **WebM** | VP9 (libvpx-vp9) | Opus | Best compression — ideal for modern browsers |
+| Format | Codec | Audio | Container | Notes |
+|---|---|---|---|---|
+| **MP4** | H.264 (libx264) | AAC | `.mp4` | Best compatibility — works in every browser |
+| **WebM** | VP9 (libvpx-vp9) | Opus | `.webm` | Best compression — ideal for modern browsers |
+| **AV1** | SVT-AV1 (libsvtav1) | AAC | `.av1.mp4` | Next-gen compression — smallest files, broad modern browser support |
 
-**Pro tip:** Generate both formats and let the browser pick the best one:
+**Pro tip:** Stack all three and let the browser pick the best one:
 
 ```html
 <video autoplay muted loop playsinline>
-  <source src="hero.webm" type="video/webm">
-  <source src="hero.mp4"  type="video/mp4">
+  <source src="hero.av1.mp4" type="video/mp4; codecs=av01">
+  <source src="hero.webm"    type="video/webm">
+  <source src="hero.mp4"     type="video/mp4">
 </video>
 ```
 
