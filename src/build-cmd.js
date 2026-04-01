@@ -8,15 +8,22 @@ import { PRESETS, RESOLUTIONS } from './presets.js';
 function getUniquePath(dest) {
   if (!fs.existsSync(dest)) return dest;
 
-  const ext = path.extname(dest);
-  const base = dest.slice(0, -ext.length);
-  let counter = 1;
+  // path.extname only strips the last segment (e.g. ".mp4" from "clip.av1.mp4"),
+  // which would produce "clip.av1_1.mp4" instead of "clip_1.av1.mp4".
+  // Instead, split on the FIRST dot in the basename so the full compound
+  // extension ("av1.mp4") is preserved as a single unit.
+  const dir = path.dirname(dest);
+  const basename = path.basename(dest);
+  const dotIndex = basename.indexOf('.');
+  const stem = dotIndex === -1 ? basename : basename.slice(0, dotIndex);
+  const ext  = dotIndex === -1 ? ''       : basename.slice(dotIndex); // e.g. ".av1.mp4"
 
-  while (fs.existsSync(`${base}_${counter}${ext}`)) {
+  let counter = 1;
+  while (fs.existsSync(path.join(dir, `${stem}_${counter}${ext}`))) {
     counter++;
   }
 
-  return `${base}_${counter}${ext}`;
+  return path.join(dir, `${stem}_${counter}${ext}`);
 }
 
 /**
