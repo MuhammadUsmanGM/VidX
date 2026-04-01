@@ -247,7 +247,8 @@ export async function run() {
         });
 
         if (chosen.length === 0) {
-          console.log(chalk.yellow('  ⚠  Nothing selected — press Space to select a file, then Enter.\n'));
+          console.log(chalk.red('\n  ✖ No file selected.'));
+          console.log(chalk.yellow('    Press Space to select a file, then press Enter.\n'));
         }
       }
       selectedVideos = chosen;
@@ -313,19 +314,23 @@ export async function run() {
 
   // Interactive multi-select if no formats provided
   if (!selectedFormats) {
-    selectedFormats = await checkbox({
-      message: '🎯 Output format(s)?',
-      choices: Object.entries(FORMATS).map(([key, f]) => ({
-        name: f.label,
-        value: key,
-      })),
-      instructions: chalk.dim('  Space to toggle · Enter to continue'),
-    });
+    let chosenFormats = [];
+    while (chosenFormats.length === 0) {
+      chosenFormats = await checkbox({
+        message: '🎯 Output format(s)?',
+        choices: Object.entries(FORMATS).map(([key, f]) => ({
+          name: f.label,
+          value: key,
+        })),
+        instructions: chalk.dim('  Space to toggle · Enter to continue'),
+      });
 
-    if (!selectedFormats || selectedFormats.length === 0) {
-      console.log(chalk.yellow('\n  No formats selected. Exiting.\n'));
-      process.exit(0);
+      if (chosenFormats.length === 0) {
+        console.log(chalk.red('\n  ✖ No format selected.'));
+        console.log(chalk.yellow('    Press Space to select a format, then press Enter.\n'));
+      }
     }
+    selectedFormats = chosenFormats;
   }
 
   // ── Step 5: Quality preset ─────────────────────────────────────────────────
@@ -595,14 +600,23 @@ async function runInit() {
       .map(([key, p]) => ({ name: p.label, value: key })),
   });
 
-  const formats = await checkbox({
-    message: 'Default output format(s)?',
-    choices: Object.entries(FORMATS).map(([key, f]) => ({
-      name: f.label,
-      value: key,
-    })),
-    instructions: chalk.dim('  Space to toggle · Enter to continue'),
-  });
+  let chosenFormats = [];
+  while (chosenFormats.length === 0) {
+    chosenFormats = await checkbox({
+      message: 'Default output format(s)?',
+      choices: Object.entries(FORMATS).map(([key, f]) => ({
+        name: f.label,
+        value: key,
+      })),
+      instructions: chalk.dim('  Space to toggle · Enter to continue'),
+    });
+
+    if (chosenFormats.length === 0) {
+      console.log(chalk.red('\n  ✖ No format selected.'));
+      console.log(chalk.yellow('    Press Space to select a format, then press Enter.\n'));
+    }
+  }
+  const formats = chosenFormats;
 
   const resolution = await select({
     message: 'Default resolution?',
