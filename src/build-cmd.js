@@ -43,7 +43,8 @@ function getUniquePath(dest) {
  *   - map_metadata -1 → strips metadata
  *
  * AV1 (SVT-AV1):
- *   - libsvtav1 in CRF mode, preset 6 (balanced speed/quality)
+ *   - libsvtav1 in CRF mode, per-quality encoder preset (4=highQuality, 5=webOptimized, 6=smallFile)
+ *   - lookahead=120 → better scene-cut detection and rate control → ~10–15% extra compression
  *   - pix_fmt yuv420p → browser compatibility
  *   - Output in MP4 container (.av1.mp4) for broad browser support
  *   - movflags +faststart → streaming before full download
@@ -92,9 +93,9 @@ export function buildCommand({ ffmpegPath, inputPath, outputPath, format, preset
 
     args.push('-c:v', 'libsvtav1');
     args.push('-crf', String(cfg.crf));
-    args.push('-preset', '6');               // 0=slowest/best, 13=fastest/worst
+    args.push('-preset', String(cfg.svtPreset ?? 5)); // per-quality preset: 4=max compression, 6=fastest
     args.push('-pix_fmt', 'yuv420p');
-    args.push('-svtav1-params', 'tune=0');   // visual quality tuning
+    args.push('-svtav1-params', 'tune=0:lookahead=120'); // tune=0 visual quality, lookahead improves rate control
     if (resolution.scale) args.push('-vf', resolution.scale);
     args.push('-c:a', 'aac');
     args.push('-b:a', cfg.audioBitrate || '96k');

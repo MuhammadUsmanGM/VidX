@@ -9,23 +9,23 @@ export const PRESETS = {
   webOptimized: {
     label: 'Web Optimized',
     description: 'Best balance of size and quality (recommended)',
-    mp4: { crf: 32, preset: 'slow', audioBitrate: '96k', maxrate: '1500k', bufsize: '3000k' },
+    mp4:  { crf: 32, preset: 'slow', audioBitrate: '96k',  maxrate: '1500k', bufsize: '3000k' },
     webm: { crf: 42, audioBitrate: '80k' },
-    av1: { crf: 38, audioBitrate: '96k' },
+    av1:  { crf: 38, svtPreset: 5, audioBitrate: '96k' },  // preset 5 = good compression/speed balance
   },
   highQuality: {
     label: 'High Quality',
     description: 'Larger file, sharper image — hero videos, showcase pages',
-    mp4: { crf: 24, preset: 'slow', audioBitrate: '128k', maxrate: '3000k', bufsize: '6000k' },
+    mp4:  { crf: 24, preset: 'slow', audioBitrate: '128k', maxrate: '3000k', bufsize: '6000k' },
     webm: { crf: 32, audioBitrate: '96k' },
-    av1: { crf: 28, audioBitrate: '128k' },
+    av1:  { crf: 28, svtPreset: 4, audioBitrate: '128k' }, // preset 4 = max compression tools, slower
   },
   smallFile: {
     label: 'Small File',
     description: 'Maximum compression — background loops, mobile-first',
-    mp4: { crf: 38, preset: 'slow', audioBitrate: '64k', maxrate: '800k', bufsize: '1600k' },
+    mp4:  { crf: 38, preset: 'slow', audioBitrate: '64k', maxrate: '800k', bufsize: '1600k' },
     webm: { crf: 50, audioBitrate: '48k' },
-    av1: { crf: 48, audioBitrate: '64k' },
+    av1:  { crf: 48, svtPreset: 6, audioBitrate: '64k' },  // preset 6 = fastest, still better than re-encoding H.264
   },
   custom: {
     label: 'Custom',
